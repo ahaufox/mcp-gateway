@@ -1,0 +1,3 @@
+[submodule "jules-mcp-server"]
+	path = jules-mcp-server
+	url = https://github.com/ahaufox/jules-mcp-server.git
