@@ -2,6 +2,8 @@
 
 An MCP proxy that aggregates multiple MCP servers behind a single HTTP entrypoint.
 
+[中文版](./README_CN.md)
+
 ## Features
 
 - Proxy multiple MCP clients: aggregate tools, prompts, and resources from many servers.
