@@ -1,3 +1,9 @@
 [submodule "jules-mcp-server"]
 	path = jules-mcp-server
 	url = https://github.com/ahaufox/jules-mcp-server.git
+[submodule "PyMCPAutoGUI"]
+	path = PyMCPAutoGUI
+	url = https://github.com/ahaufox/PyMCPAutoGUI.git
+[submodule "mcp-server-chart"]
+	path = mcp-server-chart
+	url = https://github.com/ahaufox/mcp-server-chart.git
