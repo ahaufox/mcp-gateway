@@ -1,26 +1,38 @@
-# Skills Library (私藏 Skills)
+# MCP Gateway (聚合网关)
 
-🚀 **快速迭代，行稳致远**。本项目是一个基于 **FastAPI + React/Next.js** 的全栈技能与工作流集合，旨在通过标准化规则和自动化流程提升开发效率。
+🚀 **一处聚合，全方位连接**。MCP Gateway 是一个面向 **Model Context Protocol (MCP)** 的企业级代理聚合方案。
 
-## 📂 项目文档 (Documentation)
+本项目旨在解决多 MCP Server 接入复杂、入口分散的问题，通过统一的 HTTP/SSE 网关提供标准化服务。
 
-- **[规范指南 (Rules)](./readme-rules.md)**: 涵盖安全、质量、技术栈锁定及 P0/P1/P2 风险分级开发标准。
-- **[自动化工作流 (Workflows)](./readme-workflow.md)**: 提供 API 变更、契约同步、测试与部署等标准化任务。
-- **[AI 技能库 (Skills)](./.agent/skills/)**: 包含数据 Mock (backend)、UI 设计 (frontend)、国际化 (frontend) 等专项技能。
+---
 
-## 📁 目录结构 (Structure)
+## 📖 核心指南
+
+- 📖 **[使用指南 (Guide)](./docs/USAGE_CN.md)**: 快速部署、配置服务器并开始使用。
+- 🛠️ **[二次开发 (Development)](./docs/DEVELOPMENT_CN.md)**: 了解如何添加新服务器、使用自动化工作流及遵守开发规范。
+
+## 📁 项目结构
 
 ```text
 .
-├── .agent/              # AI 智能助手配置
-│   ├── rules/           # 开发规范分类 (Global, Python)
-│   ├── skills/          # AI 技能分类 (General, Frontend)
-│   └── workflows/       # 自动化工作流分类 (Backend, Frontend, Python, etc.)
-├── readme-rules.md      # 规范指南索引
-├── readme-workflow.md   # 工作流索引
+├── .agent/              # AI 助手配置 (Rules, Skills, Workflows)
+├── docs/                # 详细说明文档 (中/英)
+├── mcp-proxy/           # 核心聚合网关（主要逻辑）
+├── jules-mcp-server/    # [子模块] 预置服务器 1
+├── PyMCPAutoGUI/        # [子模块] 预置服务器 2
+├── mcp-server-chart/    # [子模块] 预置服务器 3
+├── readme-rules.md      # 开发规范索引
+├── readme-workflow.md   # 自动化工作流索引
 └── README.md            # 项目主入口 (当前文件)
 ```
 
+## ✨ 核心特性
+
+- **多 Server 聚合**: 自动聚合各服务器的 Tools、Prompts 和 Resources。
+- **标准协议**: 完全兼容 Model Context Protocol。
+- **自动化驱动**: 内置 Git 自动化提交、安全审计及发布准备工作流。
+- **双语支持**: 核心文档提供中英双语版本。
+
 ---
-> [!IMPORTANT]
-> 在开始任何编码工作前，建议通读 [readme-rules.md](./readme-rules.md) 以确保符合项目的安全性与质量标准。
+> [!TIP]
+> 如果你是第一次使用本项目，建议从 **[使用指南](./docs/USAGE_CN.md)** 开始。
