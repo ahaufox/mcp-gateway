@@ -4,12 +4,9 @@
 
 本项目旨在解决多 MCP Server 接入复杂、入口分散的问题，通过统一的 HTTP/SSE 网关提供标准化服务。
 
----
-
-## 📖 核心指南
-
-- 📖 **[使用指南 (Guide)](./docs/USAGE_CN.md)**: 快速部署、配置服务器并开始使用。
-- 🛠️ **[二次开发 (Development)](./docs/DEVELOPMENT_CN.md)**: 了解如何添加新服务器、使用自动化工作流及遵守开发规范。
+- **[规范指南 (Rules)](./readme-rules.md)**: 涵盖安全、质量、技术栈锁定及 P0/P1/P2 风险分级开发标准。
+- **[自动化工作流 (Workflows)](./readme-workflow.md)**: 提供 API 变更、契约同步、测试与部署等标准化任务。
+- **[AI 技能库 (Skills)](./.agent/skills/)**: 包含数据 Mock (backend)、UI 设计 (frontend)、GUI 自动化 (backend/gui-automation)、数据可视化 (backend/data-visualization) 等专项技能。
 
 ## 📁 项目结构
 
