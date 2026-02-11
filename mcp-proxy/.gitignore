@@ -139,8 +139,6 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/goland,go
 
-
-/mcp-proxy
 /build
 /dist
 config_prod.json

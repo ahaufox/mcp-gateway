@@ -1,66 +1,37 @@
 # MCP Proxy Server
 
-An MCP proxy that aggregates multiple MCP servers behind a single HTTP entrypoint.
+一个高性能的 MCP 代理服务器，可将多个 MCP 服务器聚合在单个 HTTP 入口点之后。
 
-[中文版](./README_CN.md)
+[English Version](./README_EN.md)
 
-## Features
+## ✨ 核心特性
 
-- Proxy multiple MCP clients: aggregate tools, prompts, and resources from many servers.
-- SSE and streamable HTTP: serve via Server‑Sent Events or streamable HTTP.
-- Flexible config: supports `stdio`, `sse`, and `streamable-http` client types.
+- **多 Server 聚合**: 自动聚合工具 (Tools)、提示词 (Prompts) 和资源 (Resources)。
+- **多样化传输**: 支持 SSE 以及可流式 HTTP 模式。
+- **灵活配置**: 支持 `stdio`、`sse` 和 `streamable-http` 客户端。
+- **内置支持**: Docker 镜像原生支持 `npx` 和 `uvx` 运行 downstream 服务器。
 
-## Documentation
+## 📖 指南导航
 
-- Configuration: [docs/configuration.md](docs/CONFIGURATION.md)
-- Usage: [docs/usage.md](docs/USAGE.md)
-- Deployment: [docs/deployment.md](docs/DEPLOYMENT.md)
-- Claude config converter: https://tbxark.github.io/mcp-proxy
+- 🚀 **[使用指南 (Guide)](./docs/USAGE_CN.md)**: 部署步骤、参数说明与接口端点。
+- 🛠️ **[配置指南 (Config)](./docs/CONFIGURATION.md)**: 详细的 JSON 配置项说明。
+- 💻 **[内部开发 (Dev)](./docs/DEVELOPMENT_CN.md)**: 源码结构、编译命令与扩展逻辑。
 
-## Quick Start
-
-### Build from source
+## ⚡ 快速开始
 
 ```bash
-git clone https://github.com/tbxark/mcp-proxy.git
-cd mcp-proxy
-make build
-./build/mcp-proxy --config path/to/config.json
+docker run -d -p 9090:9090 \
+  -v $(pwd)/config.json:/config/config.json \
+  ghcr.io/tbxark/mcp-proxy:latest
 ```
 
-### Install via Go
+在线 Claude 配置转换器: [https://tbxark.github.io/mcp-proxy](https://tbxark.github.io/mcp-proxy)
 
-```bash
-go install github.com/tbxark/mcp-proxy@latest
-```
+## 🤝 鸣谢
 
-### Docker
+- 本项目由 [adamwattis/mcp-proxy-server](https://github.com/adamwattis/mcp-proxy-server) 启发。
+- 特别感谢 [@ccbikai](https://github.com/ccbikai) 在 [Docker 沙箱运行 MCP](https://miantiao.me/posts/guide-to-running-mcp-server-in-a-sandbox/) 方面的分享。
 
-The image includes support for launching MCP servers via `npx` and `uvx`.
+## 📄 开源协议
 
-```bash
-docker run -d -p 9090:9090 -v /path/to/config.json:/config/config.json ghcr.io/tbxark/mcp-proxy:latest
-# or provide a remote config
-docker run -d -p 9090:9090 ghcr.io/tbxark/mcp-proxy:latest --config https://example.com/config.json
-```
-
-More deployment options (including docker‑compose) are in [docs/deployment.md](docs/DEPLOYMENT.md).
-
-## Configuration
-
-See full configuration reference and examples in [docs/configuration.md](docs/CONFIGURATION.md).
-An online Claude config converter is available at: https://tbxark.github.io/mcp-proxy
-
-
-## Usage
-
-Command‑line flags, endpoints, and auth examples are documented in [docs/usage.md](docs/USAGE.md).
-
-## Thanks
-
-- This project was inspired by the [adamwattis/mcp-proxy-server](https://github.com/adamwattis/mcp-proxy-server) project
-- If you have any questions about deployment, you can refer to  [《在 Docker 沙箱中运行 MCP Server》](https://miantiao.me/posts/guide-to-running-mcp-server-in-a-sandbox/)([@ccbikai](https://github.com/ccbikai))
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+MIT License. 详见 [LICENSE](LICENSE)。
