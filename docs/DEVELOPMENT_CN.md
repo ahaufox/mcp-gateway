@@ -18,8 +18,8 @@ git submodule add <REPOSITORY_URL>
 
 本项目有一套严谨的开发规范，请务必遵守：
 
-- **[规范指南 (Rules)](../readme-rules.md)**: 涵盖安全、质量、技术栈锁定及 P0/P1/P2 风险分级开发标准。
-- **[自动化工作流 (Workflows)](../readme-workflow.md)**: 提供 API 变更、契约同步、测试与部署等标准化任务。
+- **[规范指南 (Rules)](./readme-rules.md)**: 涵盖安全、质量、技术栈锁定及 P0/P1/P2 风险分级开发标准。
+- **[自动化工作流 (Workflows)](./readme-workflow.md)**: 提供 API 变更、契约同步、测试与部署等标准化任务。
 
 ## 🤖 AI 辅助开发 (Skills)
 
