@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,6 +17,13 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"golang.org/x/sync/errgroup"
+)
+
+//go:embed templates/*
+var res embed.FS
+
+var (
+	templates = template.Must(template.ParseFS(res, "templates/*.html"))
 )
 
 type MiddlewareFunc func(http.Handler) http.Handler
@@ -149,6 +158,58 @@ func startHTTPServer(config *Config) error {
 		}
 		log.Printf("All clients initialized")
 	}()
+
+	httpMux.HandleFunc("/docs/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := templates.ExecuteTemplate(w, "converter.html", map[string]interface{}{
+			"ActivePage": "converter",
+		}); err != nil {
+			log.Printf("Template execution error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	httpMux.HandleFunc("/changelog/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := templates.ExecuteTemplate(w, "changelog.html", map[string]interface{}{
+			"ActivePage": "changelog",
+		}); err != nil {
+			log.Printf("Template execution error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		type serverInfo struct {
+			Name  string
+			Route string
+		}
+		var activeServers []serverInfo
+		for name := range config.McpServers {
+			if config.McpServers[name].Options.Disabled {
+				continue
+			}
+			mcpRoute := path.Join(baseURL.Path, name)
+			if !strings.HasPrefix(mcpRoute, "/") {
+				mcpRoute = "/" + mcpRoute
+			}
+			activeServers = append(activeServers, serverInfo{Name: name, Route: mcpRoute})
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		err := templates.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
+			"Servers":    activeServers,
+			"ActivePage": "dashboard",
+		})
+		if err != nil {
+			log.Printf("Template execution error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
 
 	go func() {
 		log.Printf("Starting %s server", config.McpProxy.Type)

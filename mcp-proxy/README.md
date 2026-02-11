@@ -14,7 +14,7 @@
 ## 📖 指南导航
 
 - 🚀 **[使用指南 (Guide)](./docs/USAGE_CN.md)**: 部署步骤、参数说明与接口端点。
-- 🛠️ **[配置指南 (Config)](./docs/CONFIGURATION.md)**: 详细的 JSON 配置项说明。
+- 🛠️ **[配置指南 (Config)](./docs/CONFIGURATION.md)** ([中文](./docs/CONFIGURATION_CN.md)): 详细的 JSON 配置项说明。
 - 💻 **[内部开发 (Dev)](./docs/DEVELOPMENT_CN.md)**: 源码结构、编译命令与扩展逻辑。
 
 ## ⚡ 快速开始

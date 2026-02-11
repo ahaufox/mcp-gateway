@@ -17,9 +17,11 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/bin/node /usr/local/bin/nodejs
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/build/mcp-proxy /main
+COPY --from=builder /app/docs /docs
+# COPY --from=builder /app/config.json /config/config.json
 ENTRYPOINT ["/main"]
 CMD ["--config", "/config/config.json"]

@@ -1,0 +1,43 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build outputs
+go.work
+mcp-proxy/mcp-gateway
+# Dependency directories
+vendor/
+
+# IDE and Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+*.log
+
+# Local configuration files
+*com.json
+!.golangci.yml
+
+# Coverage files
+*.coverprofile
+coverage.out
+
+# Temporary files
+tmp/
+temp/
+
+# Environment files
+.env
+.env.local
+*.local
