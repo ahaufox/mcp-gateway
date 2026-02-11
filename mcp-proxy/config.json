@@ -21,7 +21,7 @@
         "@modelcontextprotocol/server-github"
       ],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       },
       "options": {
         "toolFilter": {
@@ -47,6 +47,10 @@
     },
     "amap": {
       "url": "https://mcp.amap.com/sse?key=<YOUR_TOKEN>"
+    },
+    "jules": {
+      "transportType": "streamable-http",
+      "url": "http://jules-mcp-server:8000/mcp/"
     }
   }
 }
