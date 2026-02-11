@@ -1,0 +1,26 @@
+{{define "navbar"}}
+<nav class="w-full border-b border-white/5 py-4 px-6 glass-card sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <div
+                class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+                M</div>
+            <span
+                class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">mcp-proxy</span>
+        </div>
+        <div class="flex items-center space-x-8">
+            <a href="/" class="text-sm font-medium {{if eq .ActivePage " dashboard"}}text-white border-b-2
+                border-indigo-500 pb-1 transition-all{{else}}text-white/60 hover:text-white
+                transition-colors{{end}}">仪表盘</a>
+            <a href="/docs/" class="text-sm font-medium {{if eq .ActivePage " converter"}}text-white border-b-2
+                border-indigo-500 pb-1 transition-all{{else}}text-white/60 hover:text-white
+                transition-colors{{end}}">配置转换器</a>
+            <a href="/changelog/" class="text-sm font-medium {{if eq .ActivePage " changelog"}}text-white border-b-2
+                border-indigo-500 pb-1 transition-all{{else}}text-white/60 hover:text-white
+                transition-colors{{end}}">更新日志</a>
+            <a href="https://github.com/ahaufox/mcp-proxy" target="_blank"
+                class="text-sm font-medium text-white/60 hover:text-white transition-colors">GitHub</a>
+        </div>
+    </div>
+</nav>
+{{end}}

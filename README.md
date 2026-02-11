@@ -33,6 +33,8 @@
 - **标准协议**: 完全兼容 Model Context Protocol。
 - **自动化驱动**: 内置 Git 自动化提交、安全审计及发布准备工作流。
 - **双语支持**: 核心文档提供中英双语版本。
+- **全新 UI**: 现代化的 Dashboard，全站汉化，集成 [Changelog](./mcp-proxy/templates/changelog.html) 页面。
+- **多格式转换**: 内置配置转换器，支持 Cluade 及 Antigravity 格式一键生成。
 
 ---
 > [!TIP]
