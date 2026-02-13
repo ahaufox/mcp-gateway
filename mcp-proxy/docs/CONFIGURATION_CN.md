@@ -2,8 +2,6 @@
 
 本项目支持 v2 JSON 配置。v1 版本的配置在加载时会自动迁移。
 
-- 在线转换工具（从您的代理构建 Claude 配置）：[https://tbxark.github.io/mcp-proxy](https://tbxark.github.io/mcp-proxy)
-
 ## 完整示例
 
 ```jsonc
