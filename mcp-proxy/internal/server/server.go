@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"errors"
 	"html/template"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -27,6 +29,13 @@ var res embed.FS
 var (
 	templates = template.Must(template.ParseFS(res, "templates/*.html"))
 )
+
+type ServerInfo struct {
+	Name   string
+	Route  string
+	Status string
+	Error  string
+}
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
@@ -184,38 +193,12 @@ func StartHTTPServer(cfg *config.Config) error {
 	})
 
 	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("DEBUG: Hit root handler: %s", r.URL.Path)
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		type serverInfo struct {
-			Name   string
-			Route  string
-			Status string
-			Error  string
-		}
-		var activeServers []serverInfo
-		for name := range cfg.McpServers {
-			if cfg.McpServers[name].Options.Disabled {
-				continue
-			}
-			mcpRoute := path.Join(baseURL.Path, name)
-			if !strings.HasPrefix(mcpRoute, "/") {
-				mcpRoute = "/" + mcpRoute
-			}
-			status := "Unknown"
-			lastError := ""
-			if client, ok := mcpClients[name]; ok {
-				status = client.Status
-				lastError = client.LastError
-			}
-			activeServers = append(activeServers, serverInfo{
-				Name:   name,
-				Route:  mcpRoute,
-				Status: status,
-				Error:  lastError,
-			})
-		}
+		activeServers := getActiveServers(cfg, baseURL, mcpClients)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err := templates.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
@@ -224,6 +207,16 @@ func StartHTTPServer(cfg *config.Config) error {
 		})
 		if err != nil {
 			log.Printf("Template execution error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	httpMux.HandleFunc("/api/servers", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("DEBUG: Hit /api/servers handler")
+		activeServers := getActiveServers(cfg, baseURL, mcpClients)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(activeServers); err != nil {
+			log.Printf("JSON encoding error: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
@@ -251,4 +244,34 @@ func StartHTTPServer(cfg *config.Config) error {
 		return err
 	}
 	return nil
+}
+
+func getActiveServers(cfg *config.Config, baseURL *url.URL, mcpClients map[string]*core.Client) []ServerInfo {
+	var activeServers []ServerInfo
+	for name := range cfg.McpServers {
+		if cfg.McpServers[name].Options.Disabled {
+			continue
+		}
+		mcpRoute := path.Join(baseURL.Path, name)
+		if !strings.HasPrefix(mcpRoute, "/") {
+			mcpRoute = "/" + mcpRoute
+		}
+		status := "Unknown"
+		lastError := ""
+		if client, ok := mcpClients[name]; ok {
+			status = client.Status
+			lastError = client.LastError
+		}
+		activeServers = append(activeServers, ServerInfo{
+			Name:   name,
+			Route:  mcpRoute,
+			Status: status,
+			Error:  lastError,
+		})
+	}
+
+	sort.Slice(activeServers, func(i, j int) bool {
+		return activeServers[i].Name < activeServers[j].Name
+	})
+	return activeServers
 }

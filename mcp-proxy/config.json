@@ -17,6 +17,9 @@
     "stitch": {
       "url": "https://stitch.googleapis.com/mcp",
       "transportType": "streamable-http",
+      "options": {
+        "disablePing": true
+      },
       "headers": {
         "X-Goog-Api-Key": "${STITCH_API_KEY}"
       }
@@ -81,6 +84,10 @@
     "jules": {
       "transportType": "streamable-http",
       "url": "http://jules-mcp-server:8000/mcp"
+    },
+    "douyin": {
+      "transportType": "streamable-http",
+      "url": "http://douyin-mcp:8000/mcp"
     }
   }
 }

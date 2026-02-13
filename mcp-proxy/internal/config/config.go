@@ -64,6 +64,7 @@ type ToolFilterConfig struct {
 type OptionsV2 struct {
 	PanicIfInvalid optional.Field[bool] `json:"panicIfInvalid,omitempty"`
 	LogEnabled     optional.Field[bool] `json:"logEnabled,omitempty"`
+	DisablePing    optional.Field[bool] `json:"disablePing,omitempty"`
 	AuthTokens     []string             `json:"authTokens,omitempty"`
 	ToolFilter     *ToolFilterConfig    `json:"toolFilter,omitempty"`
 	Disabled       bool                 `json:"disabled,omitempty"`
@@ -234,6 +235,9 @@ func Load(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout
 		}
 		if !clientConfig.Options.LogEnabled.Present() {
 			clientConfig.Options.LogEnabled = conf.McpProxy.Options.LogEnabled
+		}
+		if !clientConfig.Options.DisablePing.Present() {
+			clientConfig.Options.DisablePing = conf.McpProxy.Options.DisablePing
 		}
 	}
 

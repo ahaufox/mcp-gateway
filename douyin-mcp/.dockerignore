@@ -1,0 +1,13 @@
+# 忽略本地虚拟环境和缓存
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.dockerignore
+
+# 允许重要文件
+!pyproject.toml
+!uv.lock
+!server.py
+!README.md
