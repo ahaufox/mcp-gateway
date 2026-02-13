@@ -82,12 +82,12 @@
       "disabled": false
     },
     "jules": {
-      "transportType": "streamable-http",
-      "url": "http://jules-mcp-server:8000/mcp"
+      "transportType": "sse",
+      "url": "http://jules-mcp-server:8000/sse"
     },
     "douyin": {
-      "transportType": "streamable-http",
-      "url": "http://douyin-mcp:8000/mcp"
+      "transportType": "sse",
+      "url": "http://douyin-mcp:8000/sse"
     }
   }
 }

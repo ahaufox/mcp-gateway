@@ -4,6 +4,10 @@ FROM python:3.12-slim-bookworm AS builder
 # 安装 uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
+# 使用国内镜像源加速
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+
 WORKDIR /app
 
 # 复制依赖文件
@@ -32,7 +36,7 @@ COPY . .
 
 # 设置环境变量
 ENV PATH="/app/.venv/bin:$PATH"
-ENV MCP_TRANSPORT="streamable-http"
+ENV MCP_TRANSPORT=sse
 
 # 暴露端口
 EXPOSE 8000
