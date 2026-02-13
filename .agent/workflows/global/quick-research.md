@@ -32,6 +32,7 @@ description: 快速调研工作流。针对开发项目需求（技术选型/架
         *   Debug: `"{Keyword}" common pitfalls/known issues/bottlenecks`
     *   **重要**: 快速浏览搜索结果，筛选出最近 2 年内的 3-5 个最有价值的讨论或文档。
 *   **Phase B: 深度挖掘 (Deep Dive)**
+    *   **内容获取**: 使用 `@mcp:fetch` 工具抓取 Phase A 中筛选出的高质量 URL 内容 (提取正文/Markdown)。
     *   针对 Phase A 发现的技术痛点或限制进行二次搜索验证。
     *   *Tip*: 技术调研需验证“官方声称”与“社区反馈”的差异 (Expectations vs Reality)。
 
@@ -66,5 +67,5 @@ description: 快速调研工作流。针对开发项目需求（技术选型/架
 *   [ ] **实战性**: 结论是否包含可执行的建议或代码示例？
 *   [ ] **信源合规**: 核心结论是否引用了官方或权威博文？
 
-*   **保存路径**: `docs/自动调研：{Type}_{话题}_{YYMMDD}.md` (e.g. `docs/自动调研：Selection_DB_250211.md`).
+*   **保存路径**: `docs/{Type}_{话题}_{YYMMDD}.md` (e.g. `docs/自动调研：Selection_DB_250211.md`).
 *   **操作**: 使用 `write_to_file` 保存，并 `notify_user`。

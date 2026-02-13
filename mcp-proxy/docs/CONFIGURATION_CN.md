@@ -89,3 +89,13 @@
 
 - 如果服务器省略了 `options.authTokens`，则 `mcpProxy.options.authTokens` 将作为默认的 Token 集合。
 - 若要发现用于过滤的工具名称，可以先在不带过滤器的情况下启动，并在日志中查看类似 `<server> Adding tool <name>` 的行。
+
+## 环境变量 (Environment Variables)
+
+配置文件中的值支持使用 `${VAR_NAME}` 格式引用环境变量。
+
+- **字符串字段**: 直接替换为环境变量的值。例如 `"baseURL": "${MCP_BASE_URL}"`。
+- **数组字段 (如 authTokens)**: 如果环境变量包含逗号分隔的字符串（例如 `TOKEN1,TOKEN2`），会自动分割为数组。
+  ```json
+  "authTokens": ["${AUTH_TOKENS}"]
+  ```

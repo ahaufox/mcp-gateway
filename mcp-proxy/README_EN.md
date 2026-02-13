@@ -7,6 +7,9 @@ An MCP proxy that aggregates multiple MCP servers behind a single HTTP entrypoin
 - Proxy multiple MCP clients: aggregate tools, prompts, and resources from many servers.
 - SSE and streamable HTTP: serve via Server‑Sent Events or streamable HTTP.
 - Flexible config: supports `stdio`, `sse`, and `streamable-http` client types.
+- Secure Config: supports injecting sensitive credentials and configuration via environment variables.
+- Status Monitoring: Dashboard displays real-time connection status (Connected/Failed) and error messages for MCP services.
+- Standard Architecture: Adopts standard Go project layout (`cmd`, `internal`) for better maintainability.
 
 ## Documentation
 

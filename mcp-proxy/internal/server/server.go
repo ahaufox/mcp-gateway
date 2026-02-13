@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/tbxark/mcp-proxy/internal/config"
+	"github.com/tbxark/mcp-proxy/internal/core"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -82,8 +84,8 @@ func recoverMiddleware(prefix string) MiddlewareFunc {
 	}
 }
 
-func startHTTPServer(config *Config) error {
-	baseURL, uErr := url.Parse(config.McpProxy.BaseURL)
+func StartHTTPServer(cfg *config.Config) error {
+	baseURL, uErr := url.Parse(cfg.McpProxy.BaseURL)
 	if uErr != nil {
 		return uErr
 	}
@@ -94,29 +96,31 @@ func startHTTPServer(config *Config) error {
 	var errorGroup errgroup.Group
 	httpMux := http.NewServeMux()
 	httpServer := &http.Server{
-		Addr:    config.McpProxy.Addr,
+		Addr:    cfg.McpProxy.Addr,
 		Handler: httpMux,
 	}
 	info := mcp.Implementation{
-		Name: config.McpProxy.Name,
+		Name: cfg.McpProxy.Name,
 	}
 
-	for name, clientConfig := range config.McpServers {
+	mcpClients := make(map[string]*core.Client)
+	for name, clientConfig := range cfg.McpServers {
 		if clientConfig.Options.Disabled {
 			log.Printf("<%s> Disabled", name)
 			continue
 		}
-		mcpClient, err := newMCPClient(name, clientConfig)
+		mcpClient, err := core.NewMCPClient(name, clientConfig)
 		if err != nil {
 			return err
 		}
-		server, err := newMCPServer(name, config.McpProxy, clientConfig)
+		mcpClients[name] = mcpClient
+		srv, err := NewMCPServer(name, cfg.McpProxy, clientConfig)
 		if err != nil {
 			return err
 		}
 		errorGroup.Go(func() error {
 			log.Printf("<%s> Connecting", name)
-			addErr := mcpClient.addToMCPServer(ctx, info, server.mcpServer)
+			addErr := mcpClient.AddToMCPServer(ctx, info, srv.McpServer)
 			if addErr != nil {
 				log.Printf("<%s> Failed to add client to server: %v", name, addErr)
 				if clientConfig.Options.PanicIfInvalid.OrElse(false) {
@@ -142,7 +146,7 @@ func startHTTPServer(config *Config) error {
 				mcpRoute += "/"
 			}
 			log.Printf("<%s> Handling requests at %s", name, mcpRoute)
-			httpMux.Handle(mcpRoute, chainMiddleware(server.handler, middlewares...))
+			httpMux.Handle(mcpRoute, chainMiddleware(srv.Handler, middlewares...))
 			httpServer.RegisterOnShutdown(func() {
 				log.Printf("<%s> Shutting down", name)
 				_ = mcpClient.Close()
@@ -185,19 +189,32 @@ func startHTTPServer(config *Config) error {
 			return
 		}
 		type serverInfo struct {
-			Name  string
-			Route string
+			Name   string
+			Route  string
+			Status string
+			Error  string
 		}
 		var activeServers []serverInfo
-		for name := range config.McpServers {
-			if config.McpServers[name].Options.Disabled {
+		for name := range cfg.McpServers {
+			if cfg.McpServers[name].Options.Disabled {
 				continue
 			}
 			mcpRoute := path.Join(baseURL.Path, name)
 			if !strings.HasPrefix(mcpRoute, "/") {
 				mcpRoute = "/" + mcpRoute
 			}
-			activeServers = append(activeServers, serverInfo{Name: name, Route: mcpRoute})
+			status := "Unknown"
+			lastError := ""
+			if client, ok := mcpClients[name]; ok {
+				status = client.Status
+				lastError = client.LastError
+			}
+			activeServers = append(activeServers, serverInfo{
+				Name:   name,
+				Route:  mcpRoute,
+				Status: status,
+				Error:  lastError,
+			})
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -212,8 +229,8 @@ func startHTTPServer(config *Config) error {
 	})
 
 	go func() {
-		log.Printf("Starting %s server", config.McpProxy.Type)
-		log.Printf("%s server listening on %s", config.McpProxy.Type, config.McpProxy.Addr)
+		log.Printf("Starting %s server", cfg.McpProxy.Type)
+		log.Printf("%s server listening on %s", cfg.McpProxy.Type, cfg.McpProxy.Addr)
 		hErr := httpServer.ListenAndServe()
 		if hErr != nil && !errors.Is(hErr, http.ErrServerClosed) {
 			log.Fatalf("Failed to start server: %v", hErr)
