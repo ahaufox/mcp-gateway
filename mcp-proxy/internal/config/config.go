@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"crypto/tls"
@@ -94,7 +94,7 @@ type MCPClientConfigV2 struct {
 	Options *OptionsV2 `json:"options,omitempty"`
 }
 
-func parseMCPClientConfigV2(conf *MCPClientConfigV2) (any, error) {
+func ParseMCPClientConfigV2(conf *MCPClientConfigV2) (any, error) {
 	if conf.Command != "" || conf.TransportType == MCPClientTypeStdio {
 		if conf.Command == "" {
 			return nil, errors.New("command is required for stdio transport")
@@ -184,7 +184,7 @@ func newConfProvider(path string, insecure, expandEnv bool, httpHeaders string, 
 	return nil, errors.New("unsupported config path")
 }
 
-func load(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout int) (*Config, error) {
+func Load(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout int) (*Config, error) {
 	pro, err := newConfProvider(path, insecure, expandEnv, httpHeaders, httpTimeout)
 	if err != nil {
 		return nil, err
@@ -194,6 +194,24 @@ func load(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout
 		return nil, err
 	}
 	adaptMCPClientConfigV1ToV2(conf)
+
+	// Helper to split tokens
+	splitTokens := func(tokens []string) []string {
+		var result []string
+		for _, token := range tokens {
+			for _, t := range strings.Split(token, ",") {
+				t = strings.TrimSpace(t)
+				if t != "" {
+					result = append(result, t)
+				}
+			}
+		}
+		return result
+	}
+
+	if conf.McpProxy != nil && conf.McpProxy.Options != nil {
+		conf.McpProxy.Options.AuthTokens = splitTokens(conf.McpProxy.Options.AuthTokens)
+	}
 
 	if conf.McpProxy == nil {
 		return nil, errors.New("mcpProxy is required")
@@ -205,6 +223,9 @@ func load(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout
 		if clientConfig.Options == nil {
 			clientConfig.Options = &OptionsV2{}
 		}
+
+		clientConfig.Options.AuthTokens = splitTokens(clientConfig.Options.AuthTokens)
+
 		if clientConfig.Options.AuthTokens == nil {
 			clientConfig.Options.AuthTokens = conf.McpProxy.Options.AuthTokens
 		}

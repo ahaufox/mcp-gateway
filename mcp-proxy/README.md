@@ -10,6 +10,9 @@
 - **多样化传输**: 支持 SSE 以及可流式 HTTP 模式。
 - **灵活配置**: 支持 `stdio`、`sse` 和 `streamable-http` 客户端。
 - **内置支持**: Docker 镜像原生支持 `npx` 和 `uvx` 运行 downstream 服务器。
+- **安全配置**: 支持通过环境变量注入敏感凭据 (`AUTH_TOKENS`) 和基础配置 (`MCP_BASE_URL`)。
+- **状态监控**: Dashboard 实时显示 MCP 服务的连接状态 (Connected/Failed) 与错误信息。
+- **标准架构**: 采用标准的 Go 项目目录结构 (`cmd`, `internal`)，提升可维护性。
 
 ## 📖 指南导航
 
