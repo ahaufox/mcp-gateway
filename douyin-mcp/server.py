@@ -25,11 +25,17 @@ import dashscope
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp import Context
+from mcp.server.transport_security import TransportSecuritySettings
 
 
 # 创建 MCP 服务器实例
+# Docker 内部网络通信需要禁用 DNS rebinding protection，
+# 否则 MCP SDK 会因 Host 头为容器名（如 douyin-mcp:8000）而返回 421
 mcp = FastMCP("Douyin MCP Server", 
-              dependencies=["requests", "ffmpeg-python", "tqdm", "dashscope"])
+              dependencies=["requests", "ffmpeg-python", "tqdm", "dashscope"],
+              transport_security=TransportSecuritySettings(
+                  enable_dns_rebinding_protection=False
+              ))
 
 # 请求头，模拟移动端访问
 HEADERS = {
@@ -366,7 +372,17 @@ def douyin_text_extraction_guide() -> str:
 
 def main():
     """启动MCP服务器"""
-    mcp.run()
+    transport = os.getenv("MCP_TRANSPORT", "stdio")
+    if transport == "sse":
+        import uvicorn
+        # FastMCP 实例的 SSE ASGI app
+        uvicorn.run(mcp.sse_app, host="0.0.0.0", port=8000)
+    elif transport == "streamable-http":
+        import uvicorn
+        # FastMCP 实例的 streamable-http ASGI app
+        uvicorn.run(mcp.streamable_http_app(), host="0.0.0.0", port=8000)
+    else:
+        mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

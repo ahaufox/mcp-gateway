@@ -1,0 +1,13 @@
+services:
+  douyin-mcp:
+    build: .
+    image: douyin-mcp
+    container_name: douyin-mcp
+    environment:
+      - API_KEY=${API_KEY}
+    volumes:
+      - ./output:/app/output
+    # 保持容器运行以便测试或手动执行命令
+    tty: true
+    stdin_open: true
+    command: [ "uv", "run", "python", "server.py" ]

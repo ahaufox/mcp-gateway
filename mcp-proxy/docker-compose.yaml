@@ -12,6 +12,25 @@ services:
     depends_on:
       jules-mcp-server:
         condition: service_healthy
+      douyin-mcp:
+        condition: service_started
+
+  douyin-mcp:
+    build:
+      context: ../douyin-mcp
+      dockerfile: Dockerfile
+    container_name: douyin-mcp
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - API_KEY=${DOUYIN_MCP_API_KEY}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/sse" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   jules-mcp-server:
     build:

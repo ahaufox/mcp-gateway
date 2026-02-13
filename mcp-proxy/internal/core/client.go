@@ -57,7 +57,7 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 		}
 		return &Client{
 			Name:            name,
-			NeedPing:        true,
+			NeedPing:        !conf.Options.DisablePing.OrElse(false),
 			NeedManualStart: true,
 			Client:          mcpClient,
 			Options:         conf.Options,
@@ -76,7 +76,7 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 		}
 		return &Client{
 			Name:            name,
-			NeedPing:        true,
+			NeedPing:        !conf.Options.DisablePing.OrElse(false),
 			NeedManualStart: true,
 			Client:          mcpClient,
 			Options:         conf.Options,
