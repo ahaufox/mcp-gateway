@@ -38,12 +38,12 @@ services:
       dockerfile: Dockerfile
     container_name: jules-mcp-server
     restart: unless-stopped
-    expose:
-      - "8000"
+    ports:
+      - "8002:8000"
     env_file:
       - ../jules-mcp-server/.env
     healthcheck:
-      test: [ "CMD", "python", "-c", "import socket; s = socket.socket(); s.connect(('localhost', 8000))" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/sse" ]
       interval: 10s
       timeout: 5s
       retries: 5
