@@ -20,17 +20,11 @@
 ## ⚡ 快速开始
 
 ```bash
-docker run -d -p 9090:9090 \
-  -v $(pwd)/config.json:/config/config.json \
-  ghcr.io/tbxark/mcp-proxy:latest
+docker compose build
+docker compose up -d
 ```
 
-在线 Claude 配置转换器: [https://tbxark.github.io/mcp-proxy](https://tbxark.github.io/mcp-proxy)
-
-## 🤝 鸣谢
-
-- 本项目由 [adamwattis/mcp-proxy-server](https://github.com/adamwattis/mcp-proxy-server) 启发。
-- 特别感谢 [@ccbikai](https://github.com/ccbikai) 在 [Docker 沙箱运行 MCP](https://miantiao.me/posts/guide-to-running-mcp-server-in-a-sandbox/) 方面的分享。
+在线 Claude 配置转换器: [config-converter](http://localhost:9090/docs/)
 
 ## 📄 开源协议
 

@@ -17,7 +17,7 @@ docker run -d -p 9090:9090 \
 需要 Go 1.24+ 环境。
 
 ```bash
-git clone https://github.com/tbxark/mcp-proxy.git
+git clone https://github.com/ahaufox/mcp-proxy.git
 cd mcp-proxy
 make build
 ./build/mcp-proxy --config path/to/config.json
