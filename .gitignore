@@ -41,3 +41,6 @@ temp/
 .env
 .env.local
 *.local
+*.mp4
+*.mp3
+douyin-mcp/__pycache__/

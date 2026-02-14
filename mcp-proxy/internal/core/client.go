@@ -23,6 +23,10 @@ type Client struct {
 	Options         *config.OptionsV2
 	Status          string
 	LastError       string
+
+	// Internal state for reconnection
+	clientInfo mcp.Implementation
+	mcpServer  *server.MCPServer
 }
 
 func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) {
@@ -86,50 +90,67 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 }
 
 func (c *Client) AddToMCPServer(ctx context.Context, clientInfo mcp.Implementation, mcpServer *server.MCPServer) error {
-	if c.NeedManualStart {
-		err := c.Client.Start(ctx)
-		if err != nil {
-			c.Status = "Failed"
-			c.LastError = err.Error()
+	c.clientInfo = clientInfo
+	c.mcpServer = mcpServer
+
+	err := c.connectAndRegister(ctx)
+	if err != nil {
+		log.Printf("<%s> Initial connection failed: %v", c.Name, err)
+		if c.Options != nil && c.Options.PanicIfInvalid.OrElse(false) {
 			return err
 		}
-	}
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = clientInfo
-	initRequest.Params.Capabilities = mcp.ClientCapabilities{
-		Experimental: make(map[string]interface{}),
-		Roots:        nil,
-		Sampling:     nil,
-	}
-	_, err := c.Client.Initialize(ctx, initRequest)
-	if err != nil {
-		c.Status = "Failed"
-		c.LastError = err.Error()
+		// For network clients, we always start a background task even if first connection fails
+		if c.NeedManualStart {
+			c.Status = "Failed"
+			c.LastError = err.Error()
+			go c.startMaintenanceTask(ctx)
+			return nil
+		}
 		return err
 	}
-	log.Printf("<%s> Successfully initialized MCP client", c.Name)
-
-	err = c.addToolsToServer(ctx, mcpServer)
-	if err != nil {
-		c.Status = "Failed"
-		c.LastError = err.Error()
-		return err
-	}
-	_ = c.addPromptsToServer(ctx, mcpServer)
-	_ = c.addResourcesToServer(ctx, mcpServer)
-	_ = c.addResourceTemplatesToServer(ctx, mcpServer)
-
-	c.Status = "Connected"
-	c.LastError = ""
 
 	if c.NeedPing {
-		go c.startPingTask(ctx)
+		go c.startMaintenanceTask(ctx)
 	}
 	return nil
 }
 
-func (c *Client) startPingTask(ctx context.Context) {
+func (c *Client) connectAndRegister(ctx context.Context) error {
+	if c.NeedManualStart {
+		log.Printf("<%s> Starting client transport", c.Name)
+		err := c.Client.Start(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to start transport: %w", err)
+		}
+	}
+
+	initRequest := mcp.InitializeRequest{}
+	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+	initRequest.Params.ClientInfo = c.clientInfo
+	initRequest.Params.Capabilities = mcp.ClientCapabilities{
+		Experimental: make(map[string]interface{}),
+	}
+
+	_, err := c.Client.Initialize(ctx, initRequest)
+	if err != nil {
+		return fmt.Errorf("failed to initialize: %w", err)
+	}
+
+	err = c.addToolsToServer(ctx, c.mcpServer)
+	if err != nil {
+		return fmt.Errorf("failed to add tools: %w", err)
+	}
+	_ = c.addPromptsToServer(ctx, c.mcpServer)
+	_ = c.addResourcesToServer(ctx, c.mcpServer)
+	_ = c.addResourceTemplatesToServer(ctx, c.mcpServer)
+
+	c.Status = "Connected"
+	c.LastError = ""
+	log.Printf("<%s> Successfully (re)connected and initialized", c.Name)
+	return nil
+}
+
+func (c *Client) startMaintenanceTask(ctx context.Context) {
 	interval := 30 * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -138,22 +159,32 @@ func (c *Client) startPingTask(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("<%s> Context done, stopping ping", c.Name)
+			log.Printf("<%s> Context done, stopping maintenance", c.Name)
 			return
 		case <-ticker.C:
-			if err := c.Client.Ping(ctx); err != nil {
-				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					return
+			if c.Status == "Connected" {
+				if err := c.Client.Ping(ctx); err != nil {
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+						return
+					}
+					failCount++
+					c.Status = "Unhealthy"
+					c.LastError = fmt.Sprintf("Ping failed: %v", err)
+					log.Printf("<%s> Ping failed: %v (count=%d)", c.Name, err, failCount)
+				} else {
+					if failCount > 0 {
+						log.Printf("<%s> Recovered", c.Name)
+						failCount = 0
+					}
 				}
-				failCount++
-				c.Status = "Unhealthy"
-				c.LastError = fmt.Sprintf("Ping failed: %v", err)
-				log.Printf("<%s> MCP Ping failed: %v (count=%d)", c.Name, err, failCount)
-			} else if failCount > 0 {
-				log.Printf("<%s> MCP Ping recovered after %d failures", c.Name, failCount)
-				failCount = 0
-				c.Status = "Connected"
-				c.LastError = ""
+			}
+
+			if c.Status != "Connected" {
+				log.Printf("<%s> Attempting to reconnect", c.Name)
+				if err := c.connectAndRegister(ctx); err != nil {
+					log.Printf("<%s> Reconnection failed: %v", c.Name, err)
+					c.LastError = err.Error()
+				}
 			}
 		}
 	}

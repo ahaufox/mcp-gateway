@@ -69,6 +69,38 @@
 
             <!-- Version Item -->
             <div class="relative pl-16 mb-12">
+                <div class="absolute left-4 top-1 w-4 h-4 rounded-full bg-violet-500 border-4 border-[#050505]"></div>
+                <div class="glass-card p-8 rounded-2xl border border-white/10">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-white">抖音 MCP 服务集成</h2>
+                        <span
+                            class="px-3 py-1 rounded-full bg-violet-500/10 text-violet-400 text-xs font-bold">2026-02-14</span>
+                    </div>
+                    <ul class="space-y-4 text-white/70">
+                        <li class="flex items-start">
+                            <span class="mr-3 mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0"></span>
+                            <span><strong>新增服务</strong>: 集成 <code>douyin-mcp</code> 抖音视频解析服务，支持无水印下载、图文作品下载、AI
+                                语音文案提取等功能。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0"></span>
+                            <span><strong>编排扩展</strong>: <code>docker-compose</code> 新增 douyin-mcp 与 jules-mcp-server
+                                容器编排，支持健康检查与自动依赖启动。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0"></span>
+                            <span><strong>协议统一</strong>: Jules 和 Douyin 服务统一采用 SSE 传输协议，修复 Docker 内部网络通信异常。</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0"></span>
+                            <span><strong>文档同步</strong>: README 新增已集成 MCP Server 一览表，完善项目结构描述。</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Version Item -->
+            <div class="relative pl-16 mb-12">
                 <div class="absolute left-4 top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-[#050505]"></div>
                 <div class="glass-card p-8 rounded-2xl border border-white/10">
                     <div class="flex items-center justify-between mb-4">

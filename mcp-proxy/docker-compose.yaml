@@ -25,8 +25,10 @@ services:
       - "8001:8000"
     environment:
       - API_KEY=${DOUYIN_MCP_API_KEY}
+    volumes:
+      - ../douyin-mcp/downloads:/app/downloads
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/sse" ]
+      test: [ "CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('localhost',8000),2); s.close()\"" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,8 +45,8 @@ services:
     env_file:
       - ../jules-mcp-server/.env
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/sse" ]
+      test: [ "CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('localhost',8000),2); s.close()\"" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s

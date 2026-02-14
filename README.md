@@ -21,20 +21,34 @@
 │   ├── readme-rules.md   # 开发规范索引
 │   └── readme-workflow.md # 自动化工作流索引
 ├── mcp-proxy/           # 核心聚合网关（主要逻辑）
-├── jules-mcp-server/    # [子模块] 预置服务器 1
-├── PyMCPAutoGUI/        # [子模块] 预置服务器 2
-├── mcp-server-chart/    # [子模块] 预置服务器 3
+├── douyin-mcp/          # 抖音视频解析 MCP 服务
+├── jules-mcp-server/    # [子模块] Jules AI 代理服务
+├── PyMCPAutoGUI/        # [子模块] GUI 自动化 MCP 服务
+├── mcp-server-chart/    # [子模块] 图表生成 MCP 服务
 └── README.md            # 项目主入口 (当前文件)
 ```
 
 ## ✨ 核心特性
 
 - **多 Server 聚合**: 自动聚合各服务器的 Tools、Prompts 和 Resources。
-- **标准协议**: 完全兼容 Model Context Protocol。
+- **标准协议**: 完全兼容 Model Context Protocol（支持 Streamable HTTP 与 SSE 双模式）。
+- **Docker 一键部署**: 通过 `docker-compose` 统一编排所有服务。
 - **自动化驱动**: 内置 Git 自动化提交、安全审计及发布准备工作流。
 - **双语支持**: 核心文档提供中英双语版本。
 - **全新 UI**: 现代化的 Dashboard，全站汉化，集成 [Changelog](./mcp-proxy/templates/changelog.html) 页面。
-- **多格式转换**: 内置配置转换器，支持 Cluade 及 Antigravity 格式一键生成。
+- **多格式转换**: 内置配置转换器，支持 Claude 及 Antigravity 格式一键生成。
+
+## 🔌 已集成 MCP Server
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| **stitch** | Streamable HTTP | Google Stitch UI 设计与代码生成 |
+| **github** | Stdio (npx) | GitHub 仓库操作（PR、Issue 等） |
+| **chart** | Stdio (npx) | AntV 图表生成 |
+| **fetch** | Stdio (uvx) | 网页内容抓取 |
+| **notion** | Stdio (npx) | Notion 笔记管理 |
+| **jules** | SSE (Docker) | Jules AI 代理服务 |
+| **douyin** | SSE (Docker) | 抖音无水印下载与文案提取 |
 
 ---
 > [!TIP]
