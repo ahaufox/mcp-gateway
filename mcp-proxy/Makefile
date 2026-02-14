@@ -1,5 +1,5 @@
 BUILD_DIR=./build
-BUILD=$(shell git rev-parse --short HEAD)@$(shell date +%s)
+BUILD?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")@$(shell date +%s)
 CURRENT_OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 CURRENT_ARCH := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 LD_FLAGS=-ldflags "-X main.BuildVersion=$(BUILD)"

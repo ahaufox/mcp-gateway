@@ -2,9 +2,12 @@ package core
 
 import (
 	"context"
+	"compress/gzip"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -14,6 +17,33 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/tbxark/mcp-proxy/internal/config"
 )
+
+type gzipDecompressor struct {
+	transport http.RoundTripper
+}
+
+func (d *gzipDecompressor) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := d.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		gz, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body = &readCloserWrapper{Reader: gz, Closer: resp.Body}
+		resp.Header.Del("Content-Encoding")
+		resp.Header.Del("Content-Length")
+	}
+	return resp, nil
+}
+
+type readCloserWrapper struct {
+	io.Reader
+	io.Closer
+}
 
 type Client struct {
 	Name            string
@@ -71,9 +101,13 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 		if len(v.Headers) > 0 {
 			options = append(options, transport.WithHTTPHeaders(v.Headers))
 		}
-		if v.Timeout > 0 {
-			options = append(options, transport.WithHTTPTimeout(v.Timeout))
+		httpClient := &http.Client{
+			Transport: &gzipDecompressor{transport: http.DefaultTransport},
 		}
+		if v.Timeout > 0 {
+			httpClient.Timeout = v.Timeout
+		}
+		options = append(options, transport.WithHTTPBasicClient(httpClient))
 		mcpClient, err := client.NewStreamableHttpClient(v.URL, options...)
 		if err != nil {
 			return nil, err
