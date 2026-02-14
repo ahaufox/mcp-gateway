@@ -14,14 +14,17 @@ docker run -d -p 9090:9090 \
 
 ### 源码编译
 
-需要 Go 1.24+ 环境。
+需要 Go 1.25+ 环境。
 
 ```bash
-git clone https://github.com/ahaufox/mcp-proxy.git
-cd mcp-proxy
+git clone https://github.com/ahaufox/mcp-gateway.git
+cd mcp-gateway/mcp-proxy
 make build
 ./build/mcp-proxy --config path/to/config.json
 ```
+
+> [!TIP]
+> 如果 `make build` 报 `go: command not found`，请确认 Go 已安装且 `/usr/local/go/bin` 在 `$PATH` 中。
 
 ## 🛠️ 命令行参数
 

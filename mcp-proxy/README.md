@@ -18,17 +18,15 @@
 
 - 🚀 **[使用指南 (Guide)](./docs/USAGE_CN.md)**: 部署步骤、参数说明与接口端点。
 - 🛠️ **[配置指南 (Config)](./docs/CONFIGURATION.md)** ([中文](./docs/CONFIGURATION_CN.md)): 详细的 JSON 配置项说明。
-- 💻 **[内部开发 (Dev)](./docs/DEVELOPMENT_CN.md)**: 源码结构、编译命令与扩展逻辑。
+- 📦 **[部署指南 (Deploy)](./docs/DEPLOYMENT.md)**: Docker Compose 多服务部署与安全配置。
+- 💻 **[内部开发 (Dev)](./docs/DEVELOPMENT_CN.md)**: 源码结构、编译命令与故障排查。
 
 ## ⚡ 快速开始
 
+在**项目根目录** (`mcp-gateway/`) 下执行：
+
 ```bash
-docker compose build
-docker compose up -d
+docker compose build && docker compose up -d
 ```
 
 在线 Claude 配置转换器: [config-converter](http://localhost:9090/docs/)
-
-## 📄 开源协议
-
-MIT License. 详见 [LICENSE](LICENSE)。

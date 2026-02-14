@@ -4,6 +4,10 @@
 
 本项目旨在解决多 MCP Server 接入复杂、入口分散的问题，通过统一的 HTTP/SSE 网关提供标准化服务。
 
+- **一键部署**：根目录下执行
+```bash
+docker compose build && docker compose up -d
+```
 - **[规范指南 (Rules)](./docs/readme-rules.md)**: 涵盖安全、质量、技术栈锁定及 P0/P1/P2 风险分级开发标准。
 - **[自动化工作流 (Workflows)](./docs/readme-workflow.md)**: 提供 API 变更、契约同步、测试与部署等标准化任务。
 - **[开发路线图 (Roadmap)](./docs/ROADMAP_CN.md)**: 项目后续开发里程碑与关键任务规划。

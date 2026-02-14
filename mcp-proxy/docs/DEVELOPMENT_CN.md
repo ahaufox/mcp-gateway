@@ -4,7 +4,7 @@
 
 ## 💻 环境准备
 
-- **语言**: Go 1.24+
+- **语言**: Go 1.25+
 - **工具**: Makefile, Docker (可选)
 
 ## 📁 核心结构
@@ -19,6 +19,9 @@
 - `make build`: 在 `./build/` 目录下生成可执行文件。
 - `make format`: 执行代码格式化 (gofmt, tidy)。
 - `make buildImage`: 构建 Docker 镜像。
+
+> [!TIP]
+> Docker 构建环境中没有 `.git` 目录，`BUILD` 变量会自动回退为 `unknown`。也可通过 `make build BUILD=<自定义版本号>` 手动指定。
 
 ## 🧪 核心逻辑扩展
 
@@ -126,6 +129,23 @@ mcp = FastMCP("My MCP Server",
 
 > [!NOTE]
 > 官方 SDK 作为 Anthropic 第一方实现，在 MCP 协议快速演进阶段具备最佳的兼容性保证。第三方 `fastmcp` 虽然 API 更简洁，但引入了额外的依赖维护风险。
+
+---
+
+### 4. `invalid character '\x1f'` — Gzip 压缩响应未解码
+
+**症状**：
+```
+transport error: failed to decode response: invalid character '\x1f' looking for beginning of value
+```
+
+**根因**：上游 MCP 服务（如 Google Stitch API）返回 Gzip 压缩的 HTTP 响应，而 `mcp-go` 的 `StreamableHttpClient` 未自动解压，导致 JSON 解析器尝试解析二进制 Gzip 数据（`\x1f` 是 Gzip 魔数的首字节）。
+
+**修复方案**（已内置）：
+
+`client.go` 中实现了 `gzipDecompressor`（自定义 `http.RoundTripper`），在 HTTP 传输层透明解压 Gzip 响应。该解压器通过 `transport.WithHTTPBasicClient` 注入到 `streamable-http` 客户端中。
+
+如果您在新增的 `streamable-http` 下游服务中仍遇到此问题，请检查自定义 `http.Client` 是否正确注入。
 
 ---
 

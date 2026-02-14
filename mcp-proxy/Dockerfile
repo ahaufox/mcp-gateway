@@ -3,7 +3,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN make build
+ARG BUILD_VERSION=docker
+RUN make build BUILD=${BUILD_VERSION}
 
 FROM node:lts-bookworm-slim AS node
 
