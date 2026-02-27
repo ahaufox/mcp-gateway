@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -93,7 +94,7 @@ func recoverMiddleware(prefix string) MiddlewareFunc {
 	}
 }
 
-func StartHTTPServer(cfg *config.Config) error {
+func StartHTTPServer(cfg *config.Config, configPath string) error {
 	baseURL, uErr := url.Parse(cfg.McpProxy.BaseURL)
 	if uErr != nil {
 		return uErr
@@ -219,6 +220,33 @@ func StartHTTPServer(cfg *config.Config) error {
 			log.Printf("JSON encoding error: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
+	})
+
+	httpMux.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("DEBUG: Hit /api/config handler")
+		var content []byte
+		var err error
+		if config.IsRemoteURL(configPath) {
+			// 如果是远程 URL，通过 http 获取
+			resp, httpErr := http.Get(configPath)
+			if httpErr != nil {
+				http.Error(w, "Failed to fetch remote config", http.StatusInternalServerError)
+				return
+			}
+			defer resp.Body.Close()
+			content, err = io.ReadAll(resp.Body)
+		} else {
+			// 如果是本地文件，直接读取
+			content, err = os.ReadFile(configPath)
+		}
+
+		if err != nil {
+			log.Printf("Failed to read config: %v", err)
+			http.Error(w, "Config not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(content)
 	})
 
 	go func() {
