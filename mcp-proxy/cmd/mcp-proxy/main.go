@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	err = server.StartHTTPServer(cfg)
+	err = server.StartHTTPServer(cfg, *conf)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

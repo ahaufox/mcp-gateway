@@ -43,4 +43,4 @@ temp/
 *.local
 *.mp4
 *.mp3
-douyin-mcp/__pycache__/
+__pycache__

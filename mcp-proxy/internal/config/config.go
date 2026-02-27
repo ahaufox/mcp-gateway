@@ -138,6 +138,10 @@ type FullConfig struct {
 	McpServers map[string]*MCPClientConfigV2 `json:"mcpServers"`
 }
 
+func IsRemoteURL(path string) bool {
+	return http.IsRemoteURL(path)
+}
+
 func newConfProvider(path string, insecure, expandEnv bool, httpHeaders string, httpTimeout int) (provider.Provider, error) {
 	if http.IsRemoteURL(path) {
 		var opts []http.Option
