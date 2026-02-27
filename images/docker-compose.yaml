@@ -1,0 +1,56 @@
+services:
+  app:
+    image: mcp-gateway/proxy:latest
+    build:
+      context: ./mcp-proxy
+      dockerfile: Dockerfile
+    volumes:
+      - ./mcp-proxy/config.json:/config/config.json
+    ports:
+      - "9090:9090"
+    restart: always
+    env_file:
+      - ./mcp-proxy/.env
+    depends_on:
+      jules-mcp-server:
+        condition: service_healthy
+      douyin-mcp:
+        condition: service_started
+
+  douyin-mcp:
+    image: mcp-gateway/douyin-mcp:latest
+    build:
+      context: ./douyin-mcp
+      dockerfile: Dockerfile
+    container_name: douyin-mcp
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - API_KEY=${DOUYIN_MCP_API_KEY}
+    volumes:
+      - ./douyin-mcp/downloads:/app/downloads
+    healthcheck:
+      test: [ "CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('localhost',8000),2); s.close()\"" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  jules-mcp-server:
+    image: mcp-gateway/jules-mcp-server:latest
+    build:
+      context: ./jules-mcp-server
+      dockerfile: Dockerfile
+    container_name: jules-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./jules-mcp-server/.env
+    healthcheck:
+      test: [ "CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('localhost',8000),2); s.close()\"" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
