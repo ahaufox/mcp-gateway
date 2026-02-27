@@ -51,23 +51,19 @@ docker compose build
 
 # 2. 同步配置文件
 echo -e "${YELLOW}[2/4] 同步配置文件到远程服务器...${NC}"
-ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p $TARGET_DIR"
 
-# 使用数组管理 rsync 参数，避免复杂的转义问题
-RSYNC_ARGS=(
-    -avz
-    -e "ssh -S $SOCKET_PATH"
-    --include='docker-compose.yaml'
-    --include='mcp-proxy/config.json'
-    --include='mcp-proxy/.env'
-    --include='jules-mcp-server/.env'
-    --include='*/'
-    --exclude='*'
-    ./
-    "$REMOTE_TARGET:$TARGET_DIR/"
+# 安全清理：如果远程存在同名的目录（通常是 Docker 自动创建的），先将其删除，否则挂载会失败
+ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p $TARGET_DIR && rm -rf $TARGET_DIR/mcp-proxy/config.json"
+
+# 使用 --relative 保持目录结构，且仅同步特定文件，避免扫描 .venv 等无关目录
+RSYNC_FILES=(
+    "docker-compose.yaml"
+    "mcp-proxy/config.json"
+    "mcp-proxy/.env"
+    "jules-mcp-server/.env"
 )
 
-rsync "${RSYNC_ARGS[@]}"
+rsync -avz -e "ssh -S $SOCKET_PATH" --relative "${RSYNC_FILES[@]}" "$REMOTE_TARGET:$TARGET_DIR/"
 
 # 3. 传输镜像
 echo -e "${YELLOW}[3/4] 传输并加载 Docker 镜像 (可能较慢)...${NC}"
@@ -75,7 +71,7 @@ docker save "${IMAGES[@]}" | gzip | ssh -S "$SOCKET_PATH" -C "$REMOTE_TARGET" "g
 
 # 4. 远程启动
 echo -e "${YELLOW}[4/4] 在远程启动 Docker 容器...${NC}"
-ssh -S "$SOCKET_PATH" -t "$REMOTE_TARGET" "cd $TARGET_DIR && docker compose up -d"
+ssh -S "$SOCKET_PATH" -t "$REMOTE_TARGET" "cd $TARGET_DIR && docker compose down && docker compose up -d"
 
 # 完成
 echo -e "${GREEN}[DONE] 部署完成！${NC}"
