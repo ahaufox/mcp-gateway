@@ -80,6 +80,7 @@ type MCPProxyConfigV2 struct {
 }
 
 type MCPClientConfigV2 struct {
+	Description   string        `json:"description,omitempty"`
 	TransportType MCPClientType `json:"transportType,omitempty"`
 
 	// Stdio

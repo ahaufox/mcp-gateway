@@ -1,4 +1,4 @@
-module github.com/tbxark/mcp-proxy
+module github.com/ahaufox/mcp-gateway/mcp-proxy
 
 go 1.24.0
 

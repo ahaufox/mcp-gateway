@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/tbxark/mcp-proxy/internal/config"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
 )
 
 type Server struct {

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/tbxark/mcp-proxy/internal/config"
-	"github.com/tbxark/mcp-proxy/internal/core"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/core"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -32,10 +32,14 @@ var (
 )
 
 type ServerInfo struct {
-	Name   string
-	Route  string
-	Status string
-	Error  string
+	Name        string
+	Route       string
+	Status      string
+	Error       string
+	Description string
+	Tools       []mcp.Tool
+	Prompts     []mcp.Prompt
+	Resources   []mcp.Resource
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
@@ -286,15 +290,27 @@ func getActiveServers(cfg *config.Config, baseURL *url.URL, mcpClients map[strin
 		}
 		status := "Unknown"
 		lastError := ""
+		description := ""
+		var tools []mcp.Tool
+		var prompts []mcp.Prompt
+		var resources []mcp.Resource
 		if client, ok := mcpClients[name]; ok {
 			status = client.Status
 			lastError = client.LastError
+			description = client.Description
+			tools = client.Tools
+			prompts = client.Prompts
+			resources = client.Resources
 		}
 		activeServers = append(activeServers, ServerInfo{
-			Name:   name,
-			Route:  mcpRoute,
-			Status: status,
-			Error:  lastError,
+			Name:        name,
+			Route:       mcpRoute,
+			Status:      status,
+			Error:       lastError,
+			Description: description,
+			Tools:       tools,
+			Prompts:     prompts,
+			Resources:   resources,
 		})
 	}
 
