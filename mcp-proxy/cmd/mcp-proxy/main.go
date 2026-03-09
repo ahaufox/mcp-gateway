@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/tbxark/mcp-proxy/internal/config"
-	"github.com/tbxark/mcp-proxy/internal/server"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/server"
 )
 
 var BuildVersion = "dev"

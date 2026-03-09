@@ -141,9 +141,9 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-white/30 text-xs">
             <div>© 2026 mcp-proxy &bull;基于 MIT 协议发布</div>
             <div class="mt-4 md:mt-0 space-x-6">
-                <a href="https://github.com/TBXark/mcp-proxy" class="hover:text-white transition-colors"
+                <a href="https://github.com/ahaufox/mcp-proxy" class="hover:text-white transition-colors"
                     target="_blank">GitHub 仓库</a>
-                <a href="https://github.com/TBXark/mcp-proxy/blob/master/LICENSE"
+                <a href="https://github.com/ahaufox/mcp-proxy/blob/master/LICENSE"
                     class="hover:text-white transition-colors" target="_blank">开源协议</a>
             </div>
         </div>
@@ -236,8 +236,7 @@
                     const server = { url: url.toString() };
                     const token = overrideToken || mcpServers[key]?.options?.authTokens?.[0] || options?.authTokens?.[0];
                     if (token) {
-                      const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-                      server.headers = { Authorization: authHeader };
+                        server.headers = { Authorization: token };
                     }
                     claudeConfig.mcpServers[key] = server;
                 }
@@ -272,9 +271,8 @@
                     const server = { serverUrl: url.toString() }; // Antigravity uses serverUrl instead of url
                     const token = overrideToken || mcpServers[key]?.options?.authTokens?.[0] || options?.authTokens?.[0];
                     if (token) {
-                        const authHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
                         server.headers = {
-                            Authorization: authHeader,
+                            Authorization: token,
                             "Content-Type": "application/json"
                         };
                     }

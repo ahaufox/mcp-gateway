@@ -1,8 +1,8 @@
 package core
 
 import (
-	"context"
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -15,7 +15,7 @@ import (
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/tbxark/mcp-proxy/internal/config"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
 )
 
 type gzipDecompressor struct {
@@ -54,6 +54,12 @@ type Client struct {
 	Status          string
 	LastError       string
 
+	// Metadata for dashboard
+	Description string
+	Tools       []mcp.Tool
+	Prompts     []mcp.Prompt
+	Resources   []mcp.Resource
+
 	// Internal state for reconnection
 	clientInfo mcp.Implementation
 	mcpServer  *server.MCPServer
@@ -76,9 +82,10 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 		}
 
 		return &Client{
-			Name:    name,
-			Client:  mcpClient,
-			Options: conf.Options,
+			Name:        name,
+			Description: conf.Description,
+			Client:      mcpClient,
+			Options:     conf.Options,
 		}, nil
 	case *config.SSEMCPClientConfig:
 		var options []transport.ClientOption
@@ -267,6 +274,7 @@ func (c *Client) addToolsToServer(ctx context.Context, mcpServer *server.MCPServ
 			break
 		}
 		log.Printf("<%s> Successfully listed %d tools", c.Name, len(tools.Tools))
+		c.Tools = append(c.Tools, tools.Tools...)
 		for _, tool := range tools.Tools {
 			if filterFunc(tool.Name) {
 				log.Printf("<%s> Adding tool %s", c.Name, tool.Name)
@@ -293,6 +301,7 @@ func (c *Client) addPromptsToServer(ctx context.Context, mcpServer *server.MCPSe
 			break
 		}
 		log.Printf("<%s> Successfully listed %d prompts", c.Name, len(prompts.Prompts))
+		c.Prompts = append(c.Prompts, prompts.Prompts...)
 		for _, prompt := range prompts.Prompts {
 			log.Printf("<%s> Adding prompt %s", c.Name, prompt.Name)
 			mcpServer.AddPrompt(prompt, c.Client.GetPrompt)
@@ -316,6 +325,7 @@ func (c *Client) addResourcesToServer(ctx context.Context, mcpServer *server.MCP
 			break
 		}
 		log.Printf("<%s> Successfully listed %d resources", c.Name, len(resources.Resources))
+		c.Resources = append(c.Resources, resources.Resources...)
 		for _, resource := range resources.Resources {
 			log.Printf("<%s> Adding resource %s", c.Name, resource.Name)
 			mcpServer.AddResource(resource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
