@@ -36,7 +36,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TARGET_DIR="/media/ahaufox/data/mcp-gateway/images"
+TARGET_DIR="/mnt/bd757a96-8cd5-4430-aba4-bbeeb031a354/mcp-gateway"
 IMAGES=("mcp-gateway/proxy:latest" "mcp-gateway/douyin-mcp:latest" "mcp-gateway/jules-mcp-server:latest")
 
 echo -e "${BLUE}开始部署 MCP Gateway 到 ${REMOTE_TARGET}...${NC}"
