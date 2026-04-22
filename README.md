@@ -4,10 +4,26 @@
 
 ## 🚀 快速开始
 
-- **一键部署**：根目录下执行
+### 本地启动
+
+根目录下执行：
 ```bash
 docker compose build && docker compose up -d
 ```
+
+### 远程自动化部署
+
+项目内置了远程部署脚本，适用于服务器自动更新场景：
+
+```bash
+# 1. 配置脚本中的服务器 SSH 地址和项目路径
+vim scripts/remote_deploy.sh
+
+# 2. 给予执行权限并运行
+chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
+```
+
+脚本将自动完成：`git pull` → `docker compose build` → `docker compose up -d`。
 
 ## 📁 项目结构
 
