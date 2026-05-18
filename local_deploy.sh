@@ -33,7 +33,7 @@ done
 
 # 0.1 解决端口 9090 冲突 (自动停止占用端口的容器)
 echo -e "${YELLOW}[0.1/3] 检查端口 9090 占用情况...${NC}"
-CONF_CONTAINER=$(docker ps --format "{{.Names}}" -a --filter "publish=9090")
+CONF_CONTAINER=$(docker ps --format "{{.Names}}" -a --filter "expose=9090/tcp" 2>/dev/null || docker ps --format "{{.Names}}" -a)
 if [ ! -z "$CONF_CONTAINER" ]; then
     # 检查冲突容器是否属于当前 docker-compose 项目
     # docker-compose ps -q 返回当前项目管理的容器 ID

@@ -16,7 +16,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # 参数检查
-REMOTE_TARGET=$1
+REMOTE_TARGET="$1"
 if [ -z "$REMOTE_TARGET" ]; then
     echo -e "${RED}错误: 未指定远程目标。${NC}"
     echo -e "用法: $0 [user@host]"
@@ -24,8 +24,8 @@ if [ -z "$REMOTE_TARGET" ]; then
 fi
 
 # SSH 连接复用配置
-SOCKET_PATH="/tmp/mcp_deploy.sock"
-SSH_OPTS="-o ControlMaster=auto -o ControlPath=$SOCKET_PATH -o ControlPersist=600"
+SOCKET_PATH="/tmp/mcp_deploy_$$.sock"
+SSH_OPTS="-o ControlMaster=auto -o ControlPath=${SOCKET_PATH} -o ControlPersist=600"
 
 # 清理函数
 cleanup() {
@@ -36,7 +36,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TARGET_DIR="/mnt/bd757a96-8cd5-4430-aba4-bbeeb031a354/mcp-gateway"
+TARGET_DIR="${REMOTE_TARGET_DIR:-/mnt/bd757a96-8cd5-4430-aba4-bbeeb031a354/mcp-gateway}"
 IMAGES=("mcp-gateway/proxy:latest" "mcp-gateway/douyin-mcp:latest" "mcp-gateway/jules-mcp-server:latest")
 
 echo -e "${BLUE}开始部署 MCP Gateway 到 ${REMOTE_TARGET}...${NC}"
@@ -53,7 +53,7 @@ docker compose build
 echo -e "${YELLOW}[2/4] 同步配置文件到远程服务器...${NC}"
 
 # 安全清理：如果远程存在同名的目录（通常是 Docker 自动创建的），先将其删除，否则挂载会失败
-ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p $TARGET_DIR && rm -rf $TARGET_DIR/mcp-proxy/config.json"
+ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p '${TARGET_DIR}' && rm -rf '${TARGET_DIR}/mcp-proxy/config.json'"
 
 # 使用 --relative 保持目录结构，且仅同步特定文件，避免扫描 .venv 等无关目录
 RSYNC_FILES=(
@@ -63,7 +63,7 @@ RSYNC_FILES=(
     "jules-mcp-server/.env"
 )
 
-rsync -avz -e "ssh -S $SOCKET_PATH" --relative "${RSYNC_FILES[@]}" "$REMOTE_TARGET:$TARGET_DIR/"
+rsync -avz -e "ssh -S ${SOCKET_PATH}" --relative "${RSYNC_FILES[@]}" "${REMOTE_TARGET}:${TARGET_DIR}/"
 
 # 3. 传输镜像
 echo -e "${YELLOW}[3/4] 传输并加载 Docker 镜像 (可能较慢)...${NC}"
@@ -71,9 +71,9 @@ docker save "${IMAGES[@]}" | gzip | ssh -S "$SOCKET_PATH" -C "$REMOTE_TARGET" "g
 
 # 4. 远程启动
 echo -e "${YELLOW}[4/4] 在远程启动 Docker 容器...${NC}"
-ssh -S "$SOCKET_PATH" -t "$REMOTE_TARGET" "cd $TARGET_DIR && docker compose down && docker compose up -d"
+ssh -S "$SOCKET_PATH" -t "$REMOTE_TARGET" "cd '${TARGET_DIR}' && docker compose down && docker compose up -d"
 
 # 完成
 echo -e "${GREEN}[DONE] 部署完成！${NC}"
-echo -e "${BLUE}服务地址: http://$(echo $REMOTE_TARGET | cut -d@ -f2):9090${NC}"
+echo -e "${BLUE}服务地址: http://$(echo "${REMOTE_TARGET}" | cut -d@ -f2):9090${NC}"
 echo -e "${YELLOW}提示: 镜像已在本地构建并传输，远程服务器无需保留源码。${NC}"

@@ -36,14 +36,11 @@ from datetime import datetime
 
 def check_dependencies():
     """检查必要的依赖是否已安装"""
+    import importlib.util
     missing = []
-    try:
-        import requests
-    except ImportError:
+    if importlib.util.find_spec("requests") is None:
         missing.append("requests")
-    try:
-        import ffmpeg
-    except ImportError:
+    if importlib.util.find_spec("ffmpeg") is None:
         missing.append("ffmpeg-python")
 
     if missing:
@@ -54,8 +51,8 @@ def check_dependencies():
 
 check_dependencies()
 
-import requests
-import ffmpeg
+import requests  # noqa: E402
+import ffmpeg    # noqa: E402
 
 # 请求头，模拟移动端访问
 HEADERS = {
@@ -386,13 +383,13 @@ def extract_text(share_link: str, api_key: Optional[str] = None, output_dir: Opt
         transcript_path = video_folder / "transcript.md"
         with open(transcript_path, 'w', encoding='utf-8') as f:
             f.write(f"# {video_info['title']}\n\n")
-            f.write(f"| 属性 | 值 |\n")
-            f.write(f"|------|----|\n")
+            f.write("| 属性 | 值 |\n")
+            f.write("|------|----|\n")
             f.write(f"| 视频ID | `{video_info['video_id']}` |\n")
             f.write(f"| 提取时间 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} |\n")
             f.write(f"| 下载链接 | [点击下载]({video_info['url']}) |\n\n")
-            f.write(f"---\n\n")
-            f.write(f"## 文案内容\n\n")
+            f.write("---\n\n")
+            f.write("## 文案内容\n\n")
             f.write(text_content)
 
         result["output_path"] = str(video_folder)

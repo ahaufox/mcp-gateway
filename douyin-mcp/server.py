@@ -14,16 +14,18 @@ import re
 import json
 import requests
 import tempfile
-import asyncio
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional, List
 import ffmpeg
-from tqdm.asyncio import tqdm
 from urllib.parse import urlparse, parse_qs
 from urllib import request
 from http import HTTPStatus
 import dashscope
 import logging
+
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context
+from mcp.server.transport_security import TransportSecuritySettings
 
 # 导入自定义模块
 from schemas import (
@@ -31,15 +33,11 @@ from schemas import (
     VideoBasicInfo, TextExtractionResult,
     AlbumDownloadResult, UserVideoList, AwemeItem
 )
-from utils import DouyinUtils, UA
+from utils import DouyinUtils
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp import Context
-from mcp.server.transport_security import TransportSecuritySettings
 
 
 # 创建 MCP 服务器实例
@@ -241,7 +239,6 @@ class DouyinProcessor:
                     f.write(chunk)
                     downloaded += len(chunk)
                     if total_size > 0:
-                        progress = downloaded / total_size
                         await ctx.report_progress(downloaded, total_size)
         
         await ctx.info(f"视频下载完成: {filepath}")

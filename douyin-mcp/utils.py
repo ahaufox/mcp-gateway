@@ -1,12 +1,8 @@
-import random
 import requests
-import re
-import os
-import sys
 import hashlib
 import base64
 import time
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 # 模拟 User-Agent
 UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/121.0.2277.107 Version/17.0 Mobile/15E148 Safari/604.1'
@@ -25,7 +21,7 @@ class DouyinUtils:
             for i, j in res.cookies.items():
                 if i == 'ttwid':
                     return j
-        except:
+        except Exception:
             pass
         return None
 

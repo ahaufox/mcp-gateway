@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -17,6 +18,26 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
 )
+
+var DefaultPingInterval = 30 * time.Second
+
+var blockedEnvKeys = map[string]struct{}{
+	"PATH":                  {},
+	"LD_PRELOAD":            {},
+	"SHELL":                 {},
+	"HOME":                  {},
+	"USER":                  {},
+	"LD_LIBRARY_PATH":       {},
+	"DYLD_INSERT_LIBRARIES": {},
+	"DYLD_LIBRARY_PATH":     {},
+	"BASH_ENV":              {},
+	"IFS":                   {},
+}
+
+func sanitizeEnvKey(key string) bool {
+	_, blocked := blockedEnvKeys[key]
+	return !blocked
+}
 
 type gzipDecompressor struct {
 	transport http.RoundTripper
@@ -46,6 +67,7 @@ type readCloserWrapper struct {
 }
 
 type Client struct {
+	mu              sync.RWMutex
 	Name            string
 	NeedPing        bool
 	NeedManualStart bool
@@ -65,6 +87,66 @@ type Client struct {
 	mcpServer  *server.MCPServer
 }
 
+func (c *Client) GetStatus() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Status
+}
+
+func (c *Client) SetStatus(s string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Status = s
+}
+
+func (c *Client) GetLastError() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.LastError
+}
+
+func (c *Client) SetLastError(e string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.LastError = e
+}
+
+func (c *Client) GetTools() []mcp.Tool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Tools
+}
+
+func (c *Client) SetTools(t []mcp.Tool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Tools = t
+}
+
+func (c *Client) GetPrompts() []mcp.Prompt {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Prompts
+}
+
+func (c *Client) SetPrompts(p []mcp.Prompt) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Prompts = p
+}
+
+func (c *Client) GetResources() []mcp.Resource {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Resources
+}
+
+func (c *Client) SetResources(r []mcp.Resource) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Resources = r
+}
+
 func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) {
 	clientInfo, pErr := config.ParseMCPClientConfigV2(conf)
 	if pErr != nil {
@@ -74,6 +156,10 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 	case *config.StdioMCPClientConfig:
 		envs := make([]string, 0, len(v.Env))
 		for kk, vv := range v.Env {
+			if !sanitizeEnvKey(kk) {
+				log.Printf("<%s> Blocked dangerous environment variable: %s", name, kk)
+				continue
+			}
 			envs = append(envs, fmt.Sprintf("%s=%s", kk, vv))
 		}
 		mcpClient, err := client.NewStdioMCPClient(v.Command, envs, v.Args...)
@@ -142,8 +228,8 @@ func (c *Client) AddToMCPServer(ctx context.Context, clientInfo mcp.Implementati
 		}
 		// For network clients, we always start a background task even if first connection fails
 		if c.NeedManualStart {
-			c.Status = "Failed"
-			c.LastError = err.Error()
+			c.SetStatus("Failed")
+			c.SetLastError(err.Error())
 			go c.startMaintenanceTask(ctx)
 			return nil
 		}
@@ -181,18 +267,27 @@ func (c *Client) connectAndRegister(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to add tools: %w", err)
 	}
-	_ = c.addPromptsToServer(ctx, c.mcpServer)
-	_ = c.addResourcesToServer(ctx, c.mcpServer)
-	_ = c.addResourceTemplatesToServer(ctx, c.mcpServer)
+	if err := c.addPromptsToServer(ctx, c.mcpServer); err != nil {
+		log.Printf("<%s> Failed to load prompts: %v", c.Name, err)
+	}
+	if err := c.addResourcesToServer(ctx, c.mcpServer); err != nil {
+		log.Printf("<%s> Failed to load resources: %v", c.Name, err)
+	}
+	if err := c.addResourceTemplatesToServer(ctx, c.mcpServer); err != nil {
+		log.Printf("<%s> Failed to load resource templates: %v", c.Name, err)
+	}
 
-	c.Status = "Connected"
-	c.LastError = ""
+	c.SetStatus("Connected")
+	c.SetLastError("")
 	log.Printf("<%s> Successfully (re)connected and initialized", c.Name)
 	return nil
 }
 
 func (c *Client) startMaintenanceTask(ctx context.Context) {
-	interval := 30 * time.Second
+	interval := DefaultPingInterval
+	if c.Options != nil && c.Options.MaintenanceInterval > 0 {
+		interval = c.Options.MaintenanceInterval
+	}
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -203,14 +298,14 @@ func (c *Client) startMaintenanceTask(ctx context.Context) {
 			log.Printf("<%s> Context done, stopping maintenance", c.Name)
 			return
 		case <-ticker.C:
-			if c.Status == "Connected" {
+			if c.GetStatus() == "Connected" {
 				if err := c.Client.Ping(ctx); err != nil {
 					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 						return
 					}
 					failCount++
-					c.Status = "Unhealthy"
-					c.LastError = fmt.Sprintf("Ping failed: %v", err)
+					c.SetStatus("Unhealthy")
+					c.SetLastError(fmt.Sprintf("Ping failed: %v", err))
 					log.Printf("<%s> Ping failed: %v (count=%d)", c.Name, err, failCount)
 				} else {
 					if failCount > 0 {
@@ -220,11 +315,11 @@ func (c *Client) startMaintenanceTask(ctx context.Context) {
 				}
 			}
 
-			if c.Status != "Connected" {
+			if c.GetStatus() != "Connected" {
 				log.Printf("<%s> Attempting to reconnect", c.Name)
 				if err := c.connectAndRegister(ctx); err != nil {
 					log.Printf("<%s> Reconnection failed: %v", c.Name, err)
-					c.LastError = err.Error()
+					c.SetLastError(err.Error())
 				}
 			}
 		}
@@ -274,7 +369,7 @@ func (c *Client) addToolsToServer(ctx context.Context, mcpServer *server.MCPServ
 			break
 		}
 		log.Printf("<%s> Successfully listed %d tools", c.Name, len(tools.Tools))
-		c.Tools = append(c.Tools, tools.Tools...)
+		c.SetTools(append(c.GetTools(), tools.Tools...))
 		for _, tool := range tools.Tools {
 			if filterFunc(tool.Name) {
 				log.Printf("<%s> Adding tool %s", c.Name, tool.Name)
@@ -301,7 +396,7 @@ func (c *Client) addPromptsToServer(ctx context.Context, mcpServer *server.MCPSe
 			break
 		}
 		log.Printf("<%s> Successfully listed %d prompts", c.Name, len(prompts.Prompts))
-		c.Prompts = append(c.Prompts, prompts.Prompts...)
+		c.SetPrompts(append(c.GetPrompts(), prompts.Prompts...))
 		for _, prompt := range prompts.Prompts {
 			log.Printf("<%s> Adding prompt %s", c.Name, prompt.Name)
 			mcpServer.AddPrompt(prompt, c.Client.GetPrompt)
@@ -325,7 +420,7 @@ func (c *Client) addResourcesToServer(ctx context.Context, mcpServer *server.MCP
 			break
 		}
 		log.Printf("<%s> Successfully listed %d resources", c.Name, len(resources.Resources))
-		c.Resources = append(c.Resources, resources.Resources...)
+		c.SetResources(append(c.GetResources(), resources.Resources...))
 		for _, resource := range resources.Resources {
 			log.Printf("<%s> Adding resource %s", c.Name, resource.Name)
 			mcpServer.AddResource(resource, func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
