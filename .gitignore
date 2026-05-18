@@ -44,3 +44,4 @@ temp/
 *.mp4
 *.mp3
 __pycache__
+.trae/documents/*.md
