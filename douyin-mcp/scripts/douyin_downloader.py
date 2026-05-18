@@ -22,9 +22,9 @@
   python douyin_downloader.py --link "抖音分享链接" --action extract --output ./output
 """
 
+import sys
 import os
 import re
-import sys
 import json
 import argparse
 import tempfile
@@ -32,6 +32,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+from scripts.logger import logger
 
 
 def check_dependencies():
@@ -44,8 +45,8 @@ def check_dependencies():
         missing.append("ffmpeg-python")
 
     if missing:
-        print(f"缺少依赖: {', '.join(missing)}")
-        print(f"请运行: pip install {' '.join(missing)}")
+        logger.error(f"缺少依赖: {', '.join(missing)}")
+        logger.error(f"请运行: pip install {' '.join(missing)}")
         sys.exit(1)
 
 
@@ -142,7 +143,7 @@ class DouyinProcessor:
         filepath = output_dir / filename
 
         if show_progress:
-            print(f"正在下载视频: {video_info['title']}")
+            logger.info(f"正在下载视频: {video_info['title']}")
 
         response = requests.get(video_info['url'], headers=HEADERS, stream=True)
         response.raise_for_status()
@@ -159,10 +160,11 @@ class DouyinProcessor:
                     downloaded += len(chunk)
                     if show_progress and total_size > 0:
                         progress = downloaded / total_size * 100
-                        print(f"\r下载进度: {progress:.1f}%", end="", flush=True)
+                        sys.stderr.write(f"\r下载进度: {progress:.1f}%")
+                        sys.stderr.flush()
 
         if show_progress:
-            print(f"\n视频下载完成: {filepath}")
+            logger.info(f"视频下载完成: {filepath}")
         return filepath
 
     def extract_audio(self, video_path: Path, show_progress: bool = True) -> Path:
@@ -170,7 +172,7 @@ class DouyinProcessor:
         audio_path = video_path.with_suffix('.mp3')
 
         if show_progress:
-            print("正在提取音频...")
+            logger.info("正在提取音频...")
         try:
             (
                 ffmpeg
@@ -179,7 +181,7 @@ class DouyinProcessor:
                 .run(capture_stdout=True, capture_stderr=True, overwrite_output=True)
             )
             if show_progress:
-                print(f"音频提取完成: {audio_path}")
+                logger.info(f"音频提取完成: {audio_path}")
             return audio_path
         except Exception as e:
             raise Exception(f"提取音频时出错: {str(e)}")
@@ -218,7 +220,7 @@ class DouyinProcessor:
 
         if show_progress:
             total_segments = int(duration / segment_duration) + 1
-            print(f"音频时长 {duration:.0f} 秒，将分割为 {total_segments} 段...")
+            logger.info(f"音频时长 {duration:.0f} 秒，将分割为 {total_segments} 段...")
 
         while current_time < duration:
             segment_path = self.temp_dir / f"segment_{segment_index}.mp3"
@@ -233,7 +235,7 @@ class DouyinProcessor:
                 segments.append(segment_path)
 
                 if show_progress:
-                    print(f"  分割片段 {segment_index + 1}: {current_time:.0f}s - {min(current_time + segment_duration, duration):.0f}s")
+                    logger.info(f"  分割片段 {segment_index + 1}: {current_time:.0f}s - {min(current_time + segment_duration, duration):.0f}s")
 
             except Exception as e:
                 raise Exception(f"分割音频片段 {segment_index} 时出错: {str(e)}")
@@ -285,13 +287,13 @@ class DouyinProcessor:
         if not need_split:
             # 文件在限制范围内，直接处理
             if show_progress:
-                print("正在识别语音...")
+                logger.info("正在识别语音...")
             return self.transcribe_single_audio(audio_path)
 
         # 需要分段处理
         if show_progress:
-            print(f"音频文件较大（时长: {audio_info['duration']:.0f}秒, 大小: {audio_info['size'] / 1024 / 1024:.1f}MB）")
-            print("将自动分段处理...")
+            logger.info(f"音频文件较大（时长: {audio_info['duration']:.0f}秒, 大小: {audio_info['size'] / 1024 / 1024:.1f}MB）")
+            logger.info("将自动分段处理...")
 
         # 分割音频
         segments = self.split_audio(audio_path, segment_duration=540, show_progress=show_progress)  # 9分钟一段，留余量
@@ -300,7 +302,7 @@ class DouyinProcessor:
         all_texts = []
         for i, segment_path in enumerate(segments):
             if show_progress:
-                print(f"正在识别第 {i + 1}/{len(segments)} 段...")
+                logger.info(f"正在识别第 {i + 1}/{len(segments)} 段...")
 
             text = self.transcribe_single_audio(segment_path)
             all_texts.append(text)
@@ -313,7 +315,7 @@ class DouyinProcessor:
         merged_text = ''.join(all_texts)
 
         if show_progress:
-            print(f"语音识别完成，共处理 {len(segments)} 个片段")
+            logger.info(f"语音识别完成，共处理 {len(segments)} 个片段")
 
         return merged_text
 
@@ -352,19 +354,19 @@ def extract_text(share_link: str, api_key: Optional[str] = None, output_dir: Opt
     processor = DouyinProcessor(api_key)
 
     if show_progress:
-        print("正在解析抖音分享链接...")
+        logger.info("正在解析抖音分享链接...")
     video_info = processor.parse_share_url(share_link)
 
     if show_progress:
-        print("正在下载视频...")
+        logger.info("正在下载视频...")
     video_path = processor.download_video(video_info, show_progress=show_progress)
 
     if show_progress:
-        print("正在提取音频...")
+        logger.info("正在提取音频...")
     audio_path = processor.extract_audio(video_path, show_progress=show_progress)
 
     if show_progress:
-        print("正在从音频中提取文本...")
+        logger.info("正在从音频中提取文本...")
     text_content = processor.extract_text_from_audio(audio_path, show_progress=show_progress)
 
     result = {
@@ -395,18 +397,18 @@ def extract_text(share_link: str, api_key: Optional[str] = None, output_dir: Opt
         result["output_path"] = str(video_folder)
 
         if show_progress:
-            print(f"文案已保存到: {transcript_path}")
+            logger.info(f"文案已保存到: {transcript_path}")
 
         # 保存视频 (可选)
         if save_video:
             saved_video_path = video_folder / f"{video_info['video_id']}.mp4"
             shutil.copy2(video_path, saved_video_path)
             if show_progress:
-                print(f"视频已保存到: {saved_video_path}")
+                logger.info(f"视频已保存到: {saved_video_path}")
 
     # 清理临时文件
     if show_progress:
-        print("正在清理临时文件...")
+        logger.info("正在清理临时文件...")
     processor.cleanup_files(video_path, audio_path)
 
     return result
@@ -445,17 +447,17 @@ def main():
     try:
         if args.action == "info":
             info = get_video_info(args.link)
-            print("\n" + "=" * 50)
-            print("视频信息:")
-            print("=" * 50)
-            print(f"视频ID: {info['video_id']}")
-            print(f"标题: {info['title']}")
-            print(f"下载链接: {info['url']}")
-            print("=" * 50)
+            logger.info("=" * 50)
+            logger.info("视频信息:")
+            logger.info("=" * 50)
+            logger.info(f"视频ID: {info['video_id']}")
+            logger.info(f"标题: {info['title']}")
+            logger.info(f"下载链接: {info['url']}")
+            logger.info("=" * 50)
 
         elif args.action == "download":
             video_path = download_video(args.link, args.output)
-            print(f"\n视频已保存到: {video_path}")
+            logger.info(f"\n视频已保存到: {video_path}")
 
         elif args.action == "extract":
             result = extract_text(
@@ -467,20 +469,21 @@ def main():
             )
 
             if not args.quiet:
-                print("\n" + "=" * 50)
-                print("提取完成!")
-                print("=" * 50)
-                print(f"视频ID: {result['video_info']['video_id']}")
-                print(f"标题: {result['video_info']['title']}")
+                logger.info("\n" + "=" * 50)
+                logger.info("提取完成!")
+                logger.info("=" * 50)
+                logger.info(f"视频ID: {result['video_info']['video_id']}")
+                logger.info(f"标题: {result['video_info']['title']}")
                 if result['output_path']:
-                    print(f"保存位置: {result['output_path']}")
-                print("=" * 50)
-                print("\n文案内容:\n")
-                print(result['text'][:500] + "..." if len(result['text']) > 500 else result['text'])
-                print("\n" + "=" * 50)
+                    logger.info(f"保存位置: {result['output_path']}")
+                logger.info("=" * 50)
+                logger.info("文案内容:")
+                text_content = result['text'][:500] + "..." if len(result['text']) > 500 else result['text']
+                logger.info(text_content)
+                logger.info("=" * 50)
 
     except Exception as e:
-        print(f"\n错误: {e}", file=sys.stderr)
+        logger.error(f"错误: {e}")
         sys.exit(1)
 
 
