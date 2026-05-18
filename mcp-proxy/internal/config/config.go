@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/tls"
 	"errors"
+	"log"
 	nethttp "net/http"
 	"strings"
 	"time"
@@ -62,12 +63,13 @@ type ToolFilterConfig struct {
 }
 
 type OptionsV2 struct {
-	PanicIfInvalid optional.Field[bool] `json:"panicIfInvalid,omitempty"`
-	LogEnabled     optional.Field[bool] `json:"logEnabled,omitempty"`
-	DisablePing    optional.Field[bool] `json:"disablePing,omitempty"`
-	AuthTokens     []string             `json:"authTokens,omitempty"`
-	ToolFilter     *ToolFilterConfig    `json:"toolFilter,omitempty"`
-	Disabled       bool                 `json:"disabled,omitempty"`
+	PanicIfInvalid      optional.Field[bool]        `json:"panicIfInvalid,omitempty"`
+	LogEnabled          optional.Field[bool]        `json:"logEnabled,omitempty"`
+	DisablePing         optional.Field[bool]        `json:"disablePing,omitempty"`
+	MaintenanceInterval time.Duration               `json:"maintenanceInterval,omitempty"`
+	AuthTokens          []string                    `json:"authTokens,omitempty"`
+	ToolFilter          *ToolFilterConfig           `json:"toolFilter,omitempty"`
+	Disabled            bool                        `json:"disabled,omitempty"`
 }
 
 type MCPProxyConfigV2 struct {
@@ -150,6 +152,7 @@ func newConfProvider(path string, insecure, expandEnv bool, httpHeaders string, 
 		if insecure {
 			transport := nethttp.DefaultTransport.(*nethttp.Transport).Clone()
 			transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+			log.Printf("WARNING: TLS certificate verification disabled (insecure mode)")
 			httpClient = &nethttp.Client{Transport: transport}
 		}
 		if httpTimeout > 0 {

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"log"
 )
 
 // ---- V1 ----
@@ -52,6 +53,7 @@ func parseMCPClientConfigV1(conf *MCPClientConfigV1) (any, error) {
 }
 
 func adaptMCPClientConfigV1ToV2(conf *FullConfig) {
+	log.Printf("WARNING: V1 config format is deprecated, please migrate to V2")
 	if conf.DeprecatedServerV1 != nil && conf.McpProxy == nil {
 		v1 := conf.DeprecatedServerV1
 		conf.McpProxy = &MCPProxyConfigV2{

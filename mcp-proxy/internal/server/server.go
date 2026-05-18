@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"syscall"
@@ -89,7 +90,7 @@ func recoverMiddleware(prefix string) MiddlewareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := recover(); err != nil {
-					log.Printf("<%s> Recovered from panic: %v", prefix, err)
+					log.Printf("<%s> Recovered from panic: %v\n%s", prefix, err, string(debug.Stack()))
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				}
 			}()
@@ -295,12 +296,12 @@ func getActiveServers(cfg *config.Config, baseURL *url.URL, mcpClients map[strin
 		var prompts []mcp.Prompt
 		var resources []mcp.Resource
 		if client, ok := mcpClients[name]; ok {
-			status = client.Status
-			lastError = client.LastError
+			status = client.GetStatus()
+			lastError = client.GetLastError()
 			description = client.Description
-			tools = client.Tools
-			prompts = client.Prompts
-			resources = client.Resources
+			tools = client.GetTools()
+			prompts = client.GetPrompts()
+			resources = client.GetResources()
 		}
 		activeServers = append(activeServers, ServerInfo{
 			Name:        name,
