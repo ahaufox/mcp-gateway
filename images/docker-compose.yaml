@@ -25,7 +25,7 @@ services:
     container_name: douyin-mcp
     restart: unless-stopped
     ports:
-      - "8001:8000"
+      - "8100:8000"
     environment:
       - API_KEY=${DOUYIN_MCP_API_KEY}
     volumes:

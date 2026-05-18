@@ -14,7 +14,7 @@ docker compose build && docker compose up -d
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | `app` (mcp-proxy) | 9090 | MCP 代理网关，聚合所有下游 MCP 服务 |
-| `douyin-mcp` | 8001 | 抖音视频下载/解析 MCP 服务 |
+| `douyin-mcp` | 8100 | 抖音视频下载/解析 MCP 服务 |
 | `jules-mcp-server` | 8002 | Jules AI 编码助手 MCP 服务 |
 
 > [!IMPORTANT]
