@@ -25,6 +25,17 @@ chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
 
 脚本将自动完成：`git pull` → `docker compose build` → `docker compose up -d`。
 
+## ⚙️ 环境变量配置
+
+详见根目录 [.env.example](./.env.example)。以下为各子服务使用的环境变量说明：
+
+| 变量 | 适用服务 | 必填 | 默认值 | 说明 |
+|------|---------|------|--------|------|
+| `API_KEY` | douyin-mcp | 是 | - | 硅基流动 / 阿里云百炼 API 密钥（用于语音转文字） |
+| `LOG_LEVEL` | douyin-mcp | 否 | `INFO` | 日志级别：`DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `MCP_TRANSPORT` | douyin-mcp | 否 | `stdio` | 传输模式：`stdio`, `sse`, `streamable-http` |
+| `MCP_PORT` | douyin-mcp | 否 | `8000` | SSE/HTTP 模式下的监听端口 |
+
 ## 📁 项目结构
 
 - **mcp-proxy/**: 核心聚合网关（主要逻辑）
