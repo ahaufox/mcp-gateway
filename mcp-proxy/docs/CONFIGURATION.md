@@ -66,12 +66,14 @@ This project supports a v2 JSON configuration. v1 configs are automatically migr
 
 Each entry defines a downstream MCP server. Supported client types:
 
-- `stdio` (implicit when `command` is set): run a subprocess via stdio.
-- `sse` (implicit when `url` is set and `transportType` ≠ `streamable-http`): connect via Server‑Sent Events.
+- `stdio` (implicit when `command` is set, or `transportType: "stdio"`): run a subprocess via stdio.
+- `sse` (implicit when `url` is set and `transportType` ≠ `streamable-http`, or `transportType: "sse"`): connect via Server‑Sent Events.
 - `streamable-http` (requires `transportType: "streamable-http"`): connect via HTTP streaming.
 
 Common fields:
 
+- `transportType` — explicitly specify the client transport type (`"stdio"`, `"sse"`, or `"streamable-http"`). When omitted, it is inferred from `command` (stdio) or `url` (SSE by default).
+- `description` — human-readable description of the server, displayed on the dashboard.
 - `command`, `args`, `env` — for `stdio` clients.
 - `url`, `headers` — for `sse` and `streamable-http` clients.
 - `timeout` — request timeout for `streamable-http`.
@@ -85,10 +87,22 @@ Common fields:
 - `toolFilter` (object): Selectively expose tools to the proxy:
   - `mode`: `allow` or `block`.
   - `list`: List of tool names.
-- `Disabled` (bool): Enable or disable this server. Disabled servers are skipped at startup.
+- `disabled` (bool): Enable or disable this server. Disabled servers are skipped at startup.
+- `disablePing` (bool): Disable periodic ping health checks for SSE/streamable-http clients. Useful for servers that do not support ping.
+- `maintenanceInterval` (duration): Interval between ping/reconnect attempts (default `30s`). Accepts Go duration format (e.g. `15s`, `1m`).
 
 Notes:
 
 - `mcpProxy.options.authTokens` serves as the default token set if a server omits `options.authTokens`.
 - To discover tool names for filtering, start without a filter and check logs for lines like `<server> Adding tool <name>`.
+
+## Environment Variables
+
+Values in the config file support `${VAR_NAME}` syntax to reference environment variables.
+
+- **String fields**: Directly replaced with the environment variable value. E.g. `"baseURL": "${MCP_BASE_URL}"`.
+- **Array fields (e.g. authTokens)**: If the environment variable contains comma-separated values (e.g. `TOKEN1,TOKEN2`), it will be automatically split into an array.
+  ```json
+  "authTokens": ["${AUTH_TOKENS}"]
+  ```
 

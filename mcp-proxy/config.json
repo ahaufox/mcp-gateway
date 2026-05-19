@@ -77,17 +77,19 @@
         "@notionhq/notion-mcp-server"
       ],
       "env": {
-        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer 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\", \"Notion-Version\": \"2022-06-28\"}"
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
       },
-      "disabled": false
+      "options": {
+        "disabled": true
+      }
     },
     "jules": {
       "transportType": "sse",
-      "url": "http://jules-mcp-server:8000/sse"
+      "url": "${JULES_MCP_URL}"
     },
     "douyin": {
       "transportType": "sse",
-      "url": "http://douyin-mcp:8000/sse"
+      "url": "${DOUYIN_MCP_URL}"
     }
   }
 }

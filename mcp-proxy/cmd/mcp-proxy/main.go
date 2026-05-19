@@ -16,7 +16,7 @@ func main() {
 	insecure := flag.Bool("insecure", false, "allow insecure HTTPS connections by skipping TLS certificate verification")
 	expandEnv := flag.Bool("expand-env", true, "expand environment variables in config file")
 	httpHeaders := flag.String("http-headers", "", "optional HTTP headers for config URL, format: 'Key1:Value1;Key2:Value2'")
-	httpTimeout := flag.Int("http-timeout", 10, "HTTP timeout in seconds when fetching config from URL")
+	httpTimeout := flag.Int("http-timeout", 20, "HTTP timeout in seconds when fetching config from URL")
 
 	version := flag.Bool("version", false, "print version and exit")
 	help := flag.Bool("help", false, "print help and exit")

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -19,13 +20,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
 	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/core"
+	"github.com/mark3labs/mcp-go/mcp"
 	"golang.org/x/sync/errgroup"
 )
 
-//go:embed templates/*
+//go:embed templates/* static/*
 var res embed.FS
 
 var (
@@ -187,6 +188,10 @@ func StartHTTPServer(cfg *config.Config, configPath string) error {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
+
+	staticFS, _ := fs.Sub(res, "static")
+	fileServer := http.FileServer(http.FS(staticFS))
+	httpMux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 
 	httpMux.HandleFunc("/changelog/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

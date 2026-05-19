@@ -2,11 +2,11 @@
 
 ## CLI
 
-```text
+```
 -config string         path to config file or a http(s) url (default "config.json")
 -expand-env            expand environment variables in config file (default true)
 -http-headers string   optional headers for config URL: 'Key1:Value1;Key2:Value2'
--http-timeout int      timeout (seconds) for remote config fetch (default 10)
+-http-timeout int      timeout (seconds) for remote config fetch (default 20)
 -insecure              skip TLS verification for remote config
 -version               print version and exit
 -help                  print help and exit
