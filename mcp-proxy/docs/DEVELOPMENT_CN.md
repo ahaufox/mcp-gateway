@@ -9,10 +9,11 @@
 
 ## 📁 核心结构
 
-- `main.go`: 程序入口，处理命令行参数和服务器启动。
-- `config.go`: 配置加载与 V1/V2 迁移逻辑。
-- `client.go`: 下游 MCP 客户端解析与初始化逻辑。
-- `http.go`: HTTP Server 路由与 SSE/Stream 处理。
+- `cmd/mcp-proxy/main.go`: 程序入口，处理命令行参数和服务器启动。
+- `internal/config/config.go`: 配置加载与 V1/V2 迁移逻辑。
+- `internal/core/client.go`: 下游 MCP 客户端解析、初始化与健康检查逻辑。
+- `internal/server/server.go`: HTTP 服务路由、中间件、Dashboard、API 端点及 SSE/Stream 处理。
+- `internal/server/mcp_server.go`: MCP 服务端创建（SSE 或 Streamable HTTP）。
 
 ## 🛠️ 常用命令 (Makefile)
 
@@ -29,7 +30,7 @@
 如果需要支持新的下游传输协议，请在 `client.go` 中扩展 `McpClientConfig` 解析逻辑，并实现相应的 MCP Client 接口。
 
 ### 修改 HTTP 聚合逻辑
-如需自定义 Tools/Prompts 的聚合或过滤规则，请关注 `http.go` 中的 Handler 实现。
+如需自定义 Tools/Prompts 的聚合或过滤规则，请关注 `internal/server/server.go` 中的路由和中间件实现。
 
 ---
 

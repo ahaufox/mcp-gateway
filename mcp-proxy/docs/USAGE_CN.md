@@ -30,9 +30,11 @@ make build
 
 - `-config`: 配置文件路径或远程 URL (默认 "config.json")。
 - `-expand-env`: 是否展开配置文件中的环境变量 (默认 true)。
-- `-http-headers`: 获取远程配置时的可选 HTTP 头。
+- `-http-headers`: 获取远程配置时的可选 HTTP 头，格式：'Key1:Value1;Key2:Value2'。
+- `-http-timeout`: 获取远程配置的超时时间（秒）(默认 20)。
 - `-insecure`: 跳过远程配置的 TLS 验证。
 - `-version`: 打印版本并退出。
+- `-help`: 打印帮助信息并退出。
 
 ## 📡 接口端点 (Endpoints)
 

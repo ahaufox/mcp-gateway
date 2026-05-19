@@ -45,3 +45,6 @@ mcp-proxy/.env
 *.mp3
 __pycache__
 .trae/documents/*.md
+
+# Redundant docker config copies
+images/

@@ -64,12 +64,14 @@
 
 每一项定义了一个下游 MCP 服务器。支持的客户端类型：
 
-- `stdio` (当设置了 `command` 时隐式使用): 通过标准输入输出运行子进程。
-- `sse` (当设置了 `url` 且 `transportType` ≠ `streamable-http` 时隐式使用): 通过服务器发送事件 (Server‑Sent Events) 连接。
+- `stdio` (当设置了 `command` 时隐式使用，或指定 `transportType: "stdio"`): 通过标准输入输出运行子进程。
+- `sse` (当设置了 `url` 且 `transportType` ≠ `streamable-http` 时隐式使用，或指定 `transportType: "sse"`): 通过服务器发送事件 (Server‑Sent Events) 连接。
 - `streamable-http` (需要 `transportType: "streamable-http"`): 通过 HTTP 流连接。
 
 常用字段：
 
+- `transportType` — 显式指定客户端传输类型（`"stdio"`, `"sse"`, 或 `"streamable-http"`）。省略时根据 `command`（stdio）或 `url`（默认 SSE）自动推断。
+- `description` — 服务器的可读描述，显示在仪表板上。
 - `command`, `args`, `env` — 用于 `stdio` 客户端。
 - `url`, `headers` — 用于 `sse` 和 `streamable-http` 客户端。
 - `timeout` — `streamable-http` 的请求超时时间。
@@ -83,7 +85,9 @@
 - `toolFilter` (object): 选择性地向代理暴露工具：
   - `mode`: `allow` (允许列表) 或 `block` (黑名单)。
   - `list`: 工具名称列表。
-- `Disabled` (bool): 启用或禁用此服务器。禁用的服务器在启动时会被跳过。
+- `disabled` (bool): 启用或禁用此服务器。禁用的服务器在启动时会被跳过。
+- `disablePing` (bool): 禁用 SSE/streamable-http 客户端的定期 Ping 健康检查。适用于不支持 Ping 的服务器。
+- `maintenanceInterval` (duration): Ping/重连尝试的间隔时间（默认 `30s`）。支持 Go 持续时间格式（例如 `15s`, `1m`）。
 
 注意：
 
