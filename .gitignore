@@ -40,7 +40,7 @@ temp/
 # Environment files
 .env
 .env.local
-*.local
+mcp-proxy/.env
 *.mp4
 *.mp3
 __pycache__
