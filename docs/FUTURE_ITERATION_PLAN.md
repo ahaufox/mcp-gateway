@@ -1,461 +1,827 @@
-# MCP Gateway 前沿性迭代方案
+# MCP Gateway 功能优化迭代方案
 
-## 1. 项目现状分析
+## 1. 现状分析
 
-### 1.1 当前架构优势
+### 1.1 当前支持的协议
 
-MCP Gateway 是一个面向 **Model Context Protocol (MCP)** 的企业级网关聚合方案，具有以下核心优势：
+| 协议类型 | 客户端支持 | 服务端暴露 | 状态 |
+|----------|------------|------------|------|
+| **stdio** | ✅ 完整 | ❌ 不支持 | 子进程通信 |
+| **SSE** | ✅ 完整 | ✅ 完整 | 双向事件流 |
+| **Streamable HTTP** | ✅ 完整 | ✅ 完整 | 无状态 HTTP |
 
-- **多 Server 聚合能力**：自动聚合 Tools、Prompts 和 Resources
-- **全平台传输兼容**：支持 Streamable HTTP 与 SSE 模式
-- **现代化 UI 设计**：内置全站汉化 Dashboard
-- **自动化工作流**：内置提交、安全审计及发布工作流
-- **多协议支持**：支持 stdio、sse 和 streamable-http 三种传输模式
+### 1.2 核心模块梳理
 
-### 1.2 技术栈
+| 模块 | 文件 | 功能 |
+|------|------|------|
+| 配置加载 | [config.go](file:///workspace/mcp-proxy/internal/config/config.go) | 配置解析、环境变量展开 |
+| 客户端管理 | [client.go](file:///workspace/mcp-proxy/internal/core/client.go) | MCP 客户端连接、重连、工具聚合 |
+| 服务端管理 | [mcp_server.go](file:///workspace/mcp-proxy/internal/server/mcp_server.go) | SSE/HTTP 服务暴露 |
+| HTTP 服务 | [server.go](file:///workspace/mcp-proxy/internal/server/server.go) | 路由、Dashboard |
 
-| 层级 | 技术栈 |
-|------|--------|
-| **网关核心** | Go + mcp-go |
-| **前端 UI** | Vanilla HTML + Tailwind |
-| **容器编排** | Docker Compose |
-| **配置管理** | JSON + 环境变量 |
+### 1.3 当前问题与痛点
 
-### 1.3 当前集成服务
+#### 协议相关
+1. **WebSocket 协议缺失** - 不支持 WebSocket 作为传输协议
+2. **协议转换能力有限** - 无法在不同协议间灵活转换（如 stdio → WebSocket）
+3. **缺乏协议适配层** - 新增协议需要修改核心代码
+4. **SSE 连接稳定性** - 长连接断开后重连机制需要优化
 
-- **stitch** (HTTP)：UI 设计与代码生成
-- **github** (Stdio)：仓库操作 (PR/Issue)
-- **chart** (Stdio)：图表生成
-- **fetch** (Stdio)：网页爬取
-- **douyin** (SSE)：抖音下载与文案提取
-- **jules** (SSE)：AI 代理服务
+#### 稳定性相关
+1. **错误隔离不足** - 单个服务异常可能影响其他服务
+2. **超时配置单一** - 不同服务/工具的超时策略无法定制
+3. **请求排队处理** - 高并发下缺乏请求队列和限流
+4. **资源泄漏风险** - stdio 进程管理存在资源泄漏隐患
+5. **大型消息处理** - 大数据量的请求/响应缺乏流式处理优化
 
-### 1.4 面临的挑战与痛点
-
-1. **可观测性不足**：缺乏详细的调用链路追踪、性能监控、日志分析
-2. **动态配置受限**：配置变更需要重启服务，无法热更新
-3. **多租户隔离缺失**：目前是单租户架构，无法支持多用户独立空间
-4. **插件生态不完善**：缺少标准化的插件注册和发现机制
-5. **AI 驱动能力薄弱**：没有利用 AI 进行智能优化和决策辅助
-6. **安全审计不完整**：缺少详细的操作审计和异常检测
-7. **扩展性瓶颈**：水平扩展能力有限
+#### 功能体验相关
+1. **工具聚合冲突** - 多个服务同名工具无重命名机制
+2. **批量工具调用** - 缺乏批量调用能力
+3. **工具调用缓存** - 重复调用相同工具无法缓存结果
+4. **请求/响应转换** - 工具参数和结果无法灵活转换
 
 ---
 
-## 2. 前沿性迭代方向
+## 2. 协议支持扩展
 
-### 2.1 AI 驱动的智能网关
+### 2.1 新增 WebSocket 协议支持
 
-#### 核心特性
-
-| 特性 | 描述 |
-|------|------|
-| **智能路由** | AI 根据请求类型自动选择最优 MCP 服务 |
-| **流量预测** | 基于历史数据预测服务负载，提前扩容 |
-| **异常检测** | AI 实时监控服务异常，自动降级或熔断 |
-| **自动优化** | 学习调用模式，优化工具组合和调用顺序 |
+#### 设计目标
+- 支持 WebSocket 作为客户端传输协议
+- 支持通过 WebSocket 暴露网关服务
+- 保持与现有 SSE/HTTP 一致的使用体验
 
 #### 技术实现
 
 ```go
-// AI 驱动的智能路由引擎示例
-type AIRouter struct {
-    model     AIModel
-    history   []CallRecord
-    optimizer *TrafficOptimizer
+package protocol
+
+// WebSocket 客户端配置
+type WebsocketMCPClientConfig struct {
+    URL               string            `json:"url"`
+    Headers           map[string]string `json:"headers"`
+    HandshakeTimeout  time.Duration     `json:"handshakeTimeout"`
+    ReadBufferSize    int               `json:"readBufferSize"`
+    WriteBufferSize   int               `json:"writeBufferSize"`
+    EnableCompression bool              `json:"enableCompression"`
 }
 
-func (r *AIRouter) Route(request *mcp.CallToolRequest) (string, error) {
-    // 1. 分析请求特征
-    features := r.extractFeatures(request)
-    
-    // 2. AI 预测最优服务
-    prediction := r.model.Predict(features)
-    
-    // 3. 结合实时状态决策
-    return r.makeDecision(prediction, r.getRealTimeStatus())
-}
-```
-
-### 2.2 企业级可观测性体系
-
-#### 三层可观测架构
-
-```mermaid
-graph TB
-    A[Metrics 指标层] --> B[Prometheus + Grafana]
-    C[Logs 日志层] --> D[Loki + Grafana]
-    E[Tracing 链路层] --> F[Jaeger]
-    G[MCP Gateway] --> A
-    G --> C
-    G --> E
-    H[MCP Services] --> A
-    H --> C
-    H --> E
-```
-
-#### 核心指标设计
-
-| 指标类别 | 具体指标 | 用途 |
-|----------|----------|------|
-| **服务层** | 服务健康状态、连接次数、重连次数 | 服务可用性监控 |
-| **调用层** | QPS、延迟分布、错误率、工具调用次数 | 性能分析 |
-| **资源层** | 内存占用、CPU 使用率、并发连接数 | 资源规划 |
-
-### 2.3 多租户与安全体系
-
-#### 租户隔离架构
-
-```mermaid
-graph LR
-    A[用户请求] --> B[认证鉴权层]
-    B --> C[租户隔离路由]
-    C --> D1[租户 A 空间]
-    C --> D2[租户 B 空间]
-    C --> D3[租户 C 空间]
-    D1 --> E1[专属 MCP 服务池]
-    D2 --> E2[专属 MCP 服务池]
-    D3 --> E3[专属 MCP 服务池]
-```
-
-#### RBAC 权限模型
-
-```go
-// 租户权限管理
-type Tenant struct {
-    ID        string
-    Name      string
-    Permissions map[string][]string // 服务 -> 权限列表
-    Quota     ResourceQuota
-    Config    TenantConfig
-}
-
-type ResourceQuota struct {
-    MaxConcurrentCalls int
-    DailyCallLimit     int
-    MaxServices        int
+// WebSocket 服务端配置
+type WebsocketMCPServerConfig struct {
+    Path              string        `json:"path"`
+    ReadBufferSize    int           `json:"readBufferSize"`
+    WriteBufferSize   int           `json:"writeBufferSize"`
+    HandshakeTimeout  time.Duration `json:"handshakeTimeout"`
+    EnableCompression bool          `json:"enableCompression"`
 }
 ```
 
-### 2.4 插件化生态系统
-
-#### 插件注册与发现
-
+#### 配置示例
 ```json
 {
-  "pluginRegistry": {
-    "discoveryMechanisms": ["local", "git", "oci", "marketplace"],
-    "validation": {
-      "sandboxed": true,
-      "signatureRequired": true
+  "mcpServers": {
+    "websocket-service": {
+      "transportType": "websocket",
+      "url": "ws://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer token"
+      },
+      "options": {
+        "handshakeTimeout": "10s",
+        "enableCompression": true
+      }
     }
   }
 }
 ```
 
-#### 插件生命周期管理
+### 2.2 协议转换桥接
 
-1. **发现** → 2. **验证** → 3. **安装** → 4. **配置** → 5. **激活** → 6. **监控** → 7. **卸载**
+#### 桥接模式
+支持任意协议间的双向转换：
+- stdio ↔ SSE
+- stdio ↔ WebSocket
+- SSE ↔ WebSocket
+- Streamable HTTP ↔ 任意协议
 
-### 2.5 云原生与弹性伸缩
+#### 桥接实现
+```go
+package bridge
 
-#### Kubernetes Operator 架构
+// ProtocolBridge 协议桥接器
+type ProtocolBridge struct {
+    source ProtocolAdapter
+    target ProtocolAdapter
+}
 
-```mermaid
-graph TB
-    A[MCPGateway CRD] --> B[MCP Gateway Operator]
-    B --> C[自动扩缩容]
-    B --> D[服务发现]
-    B --> E[配置同步]
-    C --> F[Horizontal Pod Autoscaler]
-    E --> G[ConfigMap]
+type ProtocolAdapter interface {
+    Start(ctx context.Context) error
+    Read(ctx context.Context) (*mcp.JSONRPCMessage, error)
+    Write(ctx context.Context, msg *mcp.JSONRPCMessage) error
+    Close() error
+}
+
+func (b *ProtocolBridge) Run(ctx context.Context) error {
+    // 双向转发消息
+    go b.forward(ctx, b.source, b.target)
+    go b.forward(ctx, b.target, b.source)
+    <-ctx.Done()
+    return nil
+}
+```
+
+### 2.3 统一协议适配层
+
+#### 抽象接口设计
+```go
+package transport
+
+// Transport 统一传输接口
+type Transport interface {
+    // 初始化连接
+    Connect(ctx context.Context) error
+    
+    // 发送消息
+    Send(ctx context.Context, msg *mcp.JSONRPCMessage) error
+    
+    // 接收消息
+    Receive(ctx context.Context) (*mcp.JSONRPCMessage, error)
+    
+    // 健康检查
+    Ping(ctx context.Context) error
+    
+    // 关闭连接
+    Close() error
+    
+    // 获取状态
+    Status() TransportStatus
+}
+
+// TransportFactory 传输工厂
+type TransportFactory interface {
+    Create(config any) (Transport, error)
+    Supports(transportType string) bool
+}
+```
+
+### 2.4 gRPC 协议支持（可选扩展）
+
+```protobuf
+syntax = "proto3";
+
+package mcp.gateway;
+
+service MCPGateway {
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+  rpc CallTool(stream CallToolRequest) returns (stream CallToolResponse);
+  rpc ListResources(ListResourcesRequest) returns (ListResourcesResponse);
+  rpc ReadResource(ReadResourceRequest) returns (ReadResourceResponse);
+  rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResponse);
+  rpc GetPrompt(GetPromptRequest) returns (GetPromptResponse);
+}
 ```
 
 ---
 
-## 3. 分阶段迭代计划
+## 3. 稳定性优化
 
-### 阶段一：可观测性增强（1-2 个月）
+### 3.1 服务隔离与熔断
 
-**目标**：建立完整的可观测性体系，实现服务状态透明化
-
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 集成 Prometheus metrics 暴露 | P0 | `/metrics` 端点 + Grafana 仪表盘 |
-| 结构化日志改造（Zap/Logrus） | P0 | 统一日志格式 + 日志聚合 |
-| OpenTelemetry 链路追踪集成 | P1 | 分布式追踪 + Jaeger UI |
-| 健康检查与告警规则 | P1 | Prometheus AlertManager 配置 |
-| 性能基准测试套件 | P2 | 基准测试报告 |
-
-**技术实现要点**：
-
+#### 熔断器设计
 ```go
-// metrics 中间件示例
-func metricsMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        startTime := time.Now()
-        recorder := &responseRecorder{ResponseWriter: w, statusCode: http.StatusOK}
-        
-        next.ServeHTTP(recorder, r)
-        
-        duration := time.Since(startTime)
-        requestDuration.WithLabelValues(
-            r.Method,
-            r.URL.Path,
-            strconv.Itoa(recorder.statusCode),
-        ).Observe(duration.Seconds())
-        requestCounter.WithLabelValues(
-            r.Method,
-            r.URL.Path,
-            strconv.Itoa(recorder.statusCode),
-        ).Inc()
+package circuitbreaker
+
+type State int
+
+const (
+    StateClosed State = iota   // 正常
+    StateOpen                  // 熔断
+    StateHalfOpen              // 半开
+)
+
+type CircuitBreaker struct {
+    name           string
+    state          State
+    failureCount   int
+    successCount   int
+    lastFailure    time.Time
+    config         Config
+    
+    mu             sync.RWMutex
+}
+
+type Config struct {
+    MaxFailures    int           // 最大失败次数
+    ResetTimeout   time.Duration // 熔断重置时间
+    HalfOpenMax    int           // 半开状态最大请求数
+    Timeout        time.Duration // 请求超时
+}
+
+func (cb *CircuitBreaker) Execute(fn func() error) error {
+    if !cb.Allow() {
+        return ErrCircuitOpen
+    }
+    
+    err := fn()
+    cb.RecordResult(err == nil)
+    return err
+}
+```
+
+#### 集成到客户端
+```go
+// 在 core/client.go 中集成熔断器
+type Client struct {
+    // ... 现有字段
+    circuitBreaker *circuitbreaker.CircuitBreaker
+}
+
+func (c *Client) CallTool(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+    return c.circuitBreaker.Execute(func() error {
+        return c.client.CallTool(ctx, req)
     })
 }
 ```
 
-### 阶段二：多租户与安全（2-3 个月）
+### 3.2 超时与重试策略
 
-**目标**：支持多租户隔离，完善安全体系
-
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 租户数据模型设计 | P0 | Tenant 实体 + 数据库 schema |
-| JWT/OAuth2 认证集成 | P0 | 登录认证流程 |
-| RBAC 权限系统 | P0 | 权限管理 API + UI |
-| 配置热更新机制 | P1 | 动态配置 API + etcd/Redis |
-| 安全审计日志 | P1 | 审计日志系统 |
-| 敏感信息加密存储 | P2 | 密钥管理集成 |
-
-### 阶段三：AI 智能增强（2-3 个月）
-
-**目标**：引入 AI 能力，实现智能路由和优化
-
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 调用数据收集与存储 | P0 | 调用历史数据库 |
-| AI 路由引擎原型 | P1 | 智能路由模块 |
-| 异常检测与自动熔断 | P1 | 熔断机制 + 告警 |
-| 推荐系统（工具组合） | P2 | 工具推荐 API |
-| 性能预测与自动调优 | P2 | 自动优化引擎 |
-
-### 阶段四：插件化生态（1-2 个月）
-
-**目标**：建立插件生态系统，支持第三方扩展
-
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 插件 SDK 设计 | P0 | Plugin SDK + 文档 |
-| 插件注册中心 | P0 | 插件管理 API + UI |
-| 插件沙箱运行环境 | P1 | 沙箱执行器 |
-| 插件市场原型 | P2 | 插件市场 UI |
-| 插件开发者文档 | P2 | 开发指南 + 示例 |
-
-### 阶段五：云原生与弹性（2-3 个月）
-
-**目标**：实现云原生化，支持弹性伸缩
-
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| Kubernetes Helm Chart | P0 | Helm Chart 包 |
-| MCP Gateway Operator | P1 | K8s Operator |
-| 自动扩缩容配置 | P1 | HPA 配置 |
-| 服务网格集成（Istio） | P2 | 流量管理 + 安全 |
-| 多云部署支持 | P2 | 多云部署文档 |
-
----
-
-## 4. 技术架构升级方案
-
-### 4.1 新架构概览
-
-```mermaid
-graph TB
-    subgraph "接入层"
-        LB[负载均衡<br>Load Balancer]
-        GW[API 网关<br>API Gateway]
-    end
-    
-    subgraph "核心服务层"
-        Proxy[MCP Proxy Core<br>网关核心]
-        AI[AI 智能引擎<br>AI Engine]
-        Auth[认证鉴权<br>Auth Service]
-        Config[配置中心<br>Config Service]
-    end
-    
-    subgraph "数据与可观测层"
-        DB[(元数据存储<br>PostgreSQL)]
-        Cache[(缓存层<br>Redis)]
-        Metrics[(指标存储<br>Prometheus)]
-        Trace[(链路追踪<br>Jaeger)]
-        Logs[(日志存储<br>Loki)]
-    end
-    
-    subgraph "MCP 服务层"
-        PoolA[服务池 A<br>租户 A 专属]
-        PoolB[服务池 B<br>租户 B 专属]
-        PoolC[共享服务池<br>公共服务]
-    end
-    
-    LB --> GW
-    GW --> Proxy
-    GW --> Auth
-    Proxy --> AI
-    Proxy --> Config
-    Proxy --> PoolA
-    Proxy --> PoolB
-    Proxy --> PoolC
-    Proxy --> DB
-    Proxy --> Cache
-    Proxy --> Metrics
-    Proxy --> Trace
-    Proxy --> Logs
-```
-
-### 4.2 核心模块设计
-
-#### 模块一：智能路由引擎
-
+#### 分级超时配置
 ```go
-package intelligence
-
-type Router struct {
-    selector ServiceSelector
-    analyzer RequestAnalyzer
-    optimizer TrafficOptimizer
-}
-
-type ServiceSelector interface {
-    Select(ctx context.Context, req *mcp.CallToolRequest) (string, error)
-}
-
-type RequestAnalyzer interface {
-    Analyze(ctx context.Context, req *mcp.CallToolRequest) (*RequestProfile, error)
-}
-
-type TrafficOptimizer interface {
-    Optimize(ctx context.Context, profile *RequestProfile) (*OptimizationPlan, error)
+// config.go 扩展
+type OptionsV2 struct {
+    // ... 现有字段
+    
+    // 超时配置
+    CallTimeout         time.Duration `json:"callTimeout,omitempty"`
+    InitializeTimeout   time.Duration `json:"initializeTimeout,omitempty"`
+    ListToolsTimeout    time.Duration `json:"listToolsTimeout,omitempty"`
+    
+    // 重试配置
+    MaxRetries          int           `json:"maxRetries,omitempty"`
+    RetryDelay          time.Duration `json:"retryDelay,omitempty"`
+    RetryBackoff        float64       `json:"retryBackoff,omitempty"` // 退避因子
+    RetryableErrors     []string      `json:"retryableErrors,omitempty"`
+    
+    // 限流配置
+    RateLimit           float64       `json:"rateLimit,omitempty"` // 每秒请求数
+    RateLimitBurst      int           `json:"rateLimitBurst,omitempty"`
 }
 ```
 
-#### 模块二：可观测性聚合器
-
+#### 重试中间件
 ```go
-package observability
+package retry
 
-type Aggregator struct {
-    metricsCollector *MetricsCollector
-    traceCollector  *TraceCollector
-    logCollector    *LogCollector
-}
-
-func (a *Aggregator) RecordToolCall(call ToolCallEvent) {
-    a.metricsCollector.ObserveDuration(call.Service, call.Duration)
-    a.metricsCollector.IncCounter(call.Service, call.Status)
-    a.traceCollector.AddSpan(call.TraceID, call)
-    a.logCollector.Log(call)
+func WithRetry(maxRetries int, delay time.Duration, backoff float64, fn func() error) error {
+    var lastErr error
+    for i := 0; i <= maxRetries; i++ {
+        err := fn()
+        if err == nil {
+            return nil
+        }
+        lastErr = err
+        
+        if i == maxRetries {
+            break
+        }
+        
+        select {
+        case <-time.After(calculateDelay(delay, backoff, i)):
+        }
+    }
+    return lastErr
 }
 ```
 
-#### 模块三：多租户管理器
+### 3.3 请求队列与限流
 
+#### 令牌桶限流
 ```go
-package multitenant
+package ratelimit
 
-type Manager struct {
-    tenantStore TenantStore
-    authz       Authorizer
-    quota       QuotaManager
+import "golang.org/x/time/rate"
+
+type Limiter struct {
+    limiter *rate.Limiter
 }
 
-func (m *Manager) GetTenantContext(ctx context.Context, tenantID string) (*TenantContext, error) {
-    tenant, err := m.tenantStore.Get(ctx, tenantID)
-    if err != nil {
-        return nil, err
+func NewLimiter(r rate.Limit, b int) *Limiter {
+    return &Limiter{
+        limiter: rate.NewLimiter(r, b),
+    }
+}
+
+func (l *Limiter) Wait(ctx context.Context) error {
+    return l.limiter.Wait(ctx)
+}
+```
+
+#### 请求队列
+```go
+package queue
+
+type Request struct {
+    ctx      context.Context
+    fn       func() error
+    resultCh chan error
+}
+
+type RequestQueue struct {
+    queue     chan *Request
+    workers   int
+    wg        sync.WaitGroup
+}
+
+func NewRequestQueue(queueSize, workers int) *RequestQueue {
+    q := &RequestQueue{
+        queue:   make(chan *Request, queueSize),
+        workers: workers,
+    }
+    q.start()
+    return q
+}
+
+func (q *RequestQueue) Submit(ctx context.Context, fn func() error) error {
+    req := &Request{
+        ctx:      ctx,
+        fn:       fn,
+        resultCh: make(chan error, 1),
     }
     
-    if !m.quota.CheckAndConsume(tenantID) {
-        return nil, errors.New("quota exceeded")
+    select {
+    case q.queue <- req:
+    case <-ctx.Done():
+        return ctx.Err()
     }
     
-    return &TenantContext{
-        Tenant: tenant,
-        Config: m.getTenantConfig(tenant),
-    }, nil
+    select {
+    case err := <-req.resultCh:
+        return err
+    case <-ctx.Done():
+        return ctx.Err()
+    }
 }
 ```
 
-### 4.3 数据库设计（新增表）
+### 3.4 资源管理优化
 
-#### 租户表 (tenants)
-```sql
-CREATE TABLE tenants (
-    id VARCHAR(26) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'active',
-    max_concurrent_calls INT DEFAULT 100,
-    daily_call_limit INT DEFAULT 10000,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
+#### stdio 进程守护
+```go
+package process
 
-CREATE INDEX idx_tenants_status ON tenants(status);
+type ManagedProcess struct {
+    cmd       *exec.Cmd
+    stdout    io.ReadCloser
+    stderr    io.ReadCloser
+    stdin     io.WriteCloser
+    
+    restart   chan struct{}
+    stop      chan struct{}
+    mu        sync.Mutex
+}
+
+func (p *ManagedProcess) Start() error {
+    // 启动进程
+    // 监控进程状态
+    // 异常时自动重启
+}
+
+func (p *ManagedProcess) monitor() {
+    for {
+        select {
+        case <-p.stop:
+            return
+        case <-p.restart:
+            p.restartProcess()
+        }
+    }
+}
 ```
 
-#### 调用记录表 (tool_calls)
-```sql
-CREATE TABLE tool_calls (
-    id VARCHAR(26) PRIMARY KEY,
-    tenant_id VARCHAR(26) REFERENCES tenants(id),
-    service_name VARCHAR(100) NOT NULL,
-    tool_name VARCHAR(100) NOT NULL,
-    status VARCHAR(20) NOT NULL,
-    duration_ms INT NOT NULL,
-    request_payload JSONB,
-    response_payload JSONB,
-    error_message TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    trace_id VARCHAR(100)
-);
+#### 连接池管理
+```go
+package pool
 
-CREATE INDEX idx_tool_calls_tenant ON tool_calls(tenant_id);
-CREATE INDEX idx_tool_calls_service ON tool_calls(service_name);
-CREATE INDEX idx_tool_calls_created ON tool_calls(created_at);
+type ConnectionPool struct {
+    pool      chan Transport
+    factory   func() (Transport, error)
+    maxIdle   int
+    maxActive int
+    
+    mu        sync.Mutex
+    active    int
+}
+
+func (p *ConnectionPool) Get(ctx context.Context) (Transport, error) {
+    // 获取连接或创建新连接
+}
+
+func (p *ConnectionPool) Put(conn Transport) {
+    // 归还连接或关闭
+}
+```
+
+### 3.5 错误处理增强
+
+#### 错误分类与包装
+```go
+package errors
+
+type ErrorCode string
+
+const (
+    ErrCodeTimeout        ErrorCode = "timeout"
+    ErrCodeConnection     ErrorCode = "connection"
+    ErrCodeProtocol       ErrorCode = "protocol"
+    ErrCodeServer         ErrorCode = "server"
+    ErrCodeToolNotFound   ErrorCode = "tool_not_found"
+    ErrCodeInvalidRequest ErrorCode = "invalid_request"
+)
+
+type MCPError struct {
+    Code    ErrorCode `json:"code"`
+    Message string    `json:"message"`
+    Service string    `json:"service,omitempty"`
+    Tool    string    `json:"tool,omitempty"`
+    Cause   error     `json:"-"`
+}
+
+func (e *MCPError) Error() string {
+    return fmt.Sprintf("[%s] %s (service=%s, tool=%s)", e.Code, e.Message, e.Service, e.Tool)
+}
 ```
 
 ---
 
-## 5. 风险与应对
+## 4. 功能增强
 
-| 风险 | 影响 | 概率 | 应对措施 |
-|------|------|------|----------|
-| AI 模型性能不达标 | 高 | 中 | 先从规则引擎起步，逐步引入 ML |
-| 多租户隔离复杂度 | 高 | 中 | 采用渐进式隔离，先逻辑后物理 |
-| 插件生态安全风险 | 高 | 高 | 严格沙箱 + 签名验证 + 安全审计 |
-| 迁移成本高 | 中 | 中 | 保持向后兼容，提供迁移工具 |
-| 运维复杂度提升 | 中 | 高 | 完善文档 + 自动化运维工具 |
+### 4.1 工具重命名与命名空间
+
+#### 配置示例
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "options": {
+        "toolNamespace": "github",
+        "toolPrefix": "gh_",
+        "toolRename": {
+          "create_issue": "create_github_issue",
+          "search_repos": "search_github_repos"
+        }
+      }
+    }
+  }
+}
+```
+
+#### 实现代码
+```go
+type ToolRewriteConfig struct {
+    Namespace string            `json:"namespace,omitempty"`
+    Prefix    string            `json:"prefix,omitempty"`
+    Rename    map[string]string `json:"rename,omitempty"`
+}
+
+func rewriteToolName(original string, config *ToolRewriteConfig) string {
+    if config == nil {
+        return original
+    }
+    
+    // 先检查精确重命名
+    if newName, ok := config.Rename[original]; ok {
+        return newName
+    }
+    
+    // 添加前缀
+    name := original
+    if config.Prefix != "" {
+        name = config.Prefix + name
+    }
+    
+    // 添加命名空间
+    if config.Namespace != "" {
+        name = config.Namespace + "." + name
+    }
+    
+    return name
+}
+```
+
+### 4.2 工具调用缓存
+
+#### 缓存配置
+```go
+type CacheConfig struct {
+    Enabled      bool          `json:"enabled"`
+    TTL          time.Duration `json:"ttl"`
+    MaxSize      int           `json:"maxSize"`
+    CacheableTools []string    `json:"cacheableTools,omitempty"`
+}
+```
+
+#### 缓存实现
+```go
+package cache
+
+import "github.com/hashicorp/golang-lru/v2"
+
+type ToolCallCache struct {
+    cache *lru.Cache[string, cacheEntry]
+    ttl   time.Duration
+}
+
+type cacheEntry struct {
+    result    *mcp.CallToolResult
+    timestamp time.Time
+}
+
+func (c *ToolCallCache) Get(service, tool string, args map[string]any) (*mcp.CallToolResult, bool) {
+    key := c.buildKey(service, tool, args)
+    entry, ok := c.cache.Get(key)
+    if !ok {
+        return nil, false
+    }
+    
+    if time.Since(entry.timestamp) > c.ttl {
+        c.cache.Remove(key)
+        return nil, false
+    }
+    
+    return entry.result, true
+}
+
+func (c *ToolCallCache) Set(service, tool string, args map[string]any, result *mcp.CallToolResult) {
+    key := c.buildKey(service, tool, args)
+    c.cache.Add(key, cacheEntry{
+        result:    result,
+        timestamp: time.Now(),
+    })
+}
+```
+
+### 4.3 批量工具调用
+
+#### 批量调用 API
+```go
+type BatchCallRequest struct {
+    Calls []struct {
+        Service string         `json:"service"`
+        Tool    string         `json:"tool"`
+        Args    map[string]any `json:"arguments"`
+    } `json:"calls"`
+    Parallel bool `json:"parallel,omitempty"`
+}
+
+type BatchCallResponse struct {
+    Results []struct {
+        Success bool                   `json:"success"`
+        Result  *mcp.CallToolResult    `json:"result,omitempty"`
+        Error   string                 `json:"error,omitempty"`
+    } `json:"results"`
+}
+```
+
+#### 批量调用实现
+```go
+func (s *Server) BatchCallTools(ctx context.Context, req BatchCallRequest) (*BatchCallResponse, error) {
+    resp := &BatchCallResponse{
+        Results: make([]struct {
+            Success bool
+            Result  *mcp.CallToolResult
+            Error   string
+        }, len(req.Calls)),
+    }
+    
+    if req.Parallel {
+        // 并行执行
+        var wg sync.WaitGroup
+        for i, call := range req.Calls {
+            wg.Add(1)
+            go func(idx int, c struct{ Service, Tool string; Args map[string]any }) {
+                defer wg.Done()
+                result, err := s.callSingleTool(ctx, c.Service, c.Tool, c.Args)
+                if err != nil {
+                    resp.Results[idx].Error = err.Error()
+                } else {
+                    resp.Results[idx].Success = true
+                    resp.Results[idx].Result = result
+                }
+            }(i, call)
+        }
+        wg.Wait()
+    } else {
+        // 串行执行
+        for i, call := range req.Calls {
+            result, err := s.callSingleTool(ctx, call.Service, call.Tool, call.Args)
+            if err != nil {
+                resp.Results[i].Error = err.Error()
+            } else {
+                resp.Results[i].Success = true
+                resp.Results[i].Result = result
+            }
+        }
+    }
+    
+    return resp, nil
+}
+```
+
+### 4.4 请求/响应转换钩子
+
+#### 转换钩子接口
+```go
+package hook
+
+type ToolCallHook interface {
+    BeforeCall(ctx context.Context, service, tool string, args map[string]any) (map[string]any, error)
+    AfterCall(ctx context.Context, service, tool string, result *mcp.CallToolResult, err error) (*mcp.CallToolResult, error)
+}
+
+type PromptHook interface {
+    BeforeGetPrompt(ctx context.Context, service, prompt string, args map[string]any) (map[string]any, error)
+    AfterGetPrompt(ctx context.Context, service, prompt string, result *mcp.GetPromptResult, err error) (*mcp.GetPromptResult, error)
+}
+```
+
+#### 配置示例
+```json
+{
+  "mcpServers": {
+    "my-service": {
+      "command": "my-server",
+      "options": {
+        "hooks": {
+          "toolCall": {
+            "before": [
+              {
+                "type": "add_default_args",
+                "config": {
+                  "defaults": {
+                    "api_version": "v2"
+                  }
+                }
+              }
+            ],
+            "after": [
+              {
+                "type": "transform_result",
+                "config": {
+                  "template": "{ \"data\": {{.content}} }"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
 
 ---
 
-## 6. 成功指标
+## 5. 分阶段实施计划
 
-| 指标 | 目标值 |
-|------|--------|
-| 系统可用性 | > 99.9% |
-| P95 延迟 | < 500ms |
-| 租户数量支持 | > 1000 |
-| 插件生态规模 | > 50 个官方 + 社区插件 |
-| MTTR（平均恢复时间） | < 5 分钟 |
-| 可观测性覆盖 | 100% 核心服务 |
+### 阶段一：稳定性基础（2-3 周）
+
+**目标**：提升核心稳定性，建立错误处理和熔断机制
+
+| 任务 | 优先级 | 交付物 |
+|------|--------|--------|
+| 分级超时配置 | P0 | 超时配置选项 + 应用 |
+| 熔断器实现 | P0 | CircuitBreaker + 集成 |
+| 错误分类与包装 | P0 | MCPError + 错误定义 |
+| stdio 进程管理优化 | P1 | ManagedProcess |
+| 基础重试机制 | P1 | 重试中间件 |
+
+### 阶段二：协议扩展（3-4 周）
+
+**目标**：支持 WebSocket，建立统一协议抽象层
+
+| 任务 | 优先级 | 交付物 |
+|------|--------|--------|
+| WebSocket 客户端支持 | P0 | WebSocket MCPClient 实现 |
+| 统一协议适配层 | P0 | Transport 抽象接口 |
+| WebSocket 服务端暴露 | P1 | WebSocket 服务端点 |
+| 协议转换桥接 | P1 | ProtocolBridge 实现 |
+
+### 阶段三：功能增强（3-4 周）
+
+**目标**：工具管理、缓存、批量调用等功能
+
+| 任务 | 优先级 | 交付物 |
+|------|--------|--------|
+| 工具重命名与命名空间 | P0 | ToolRewriteConfig + 实现 |
+| 工具调用缓存 | P0 | ToolCallCache + 集成 |
+| 批量工具调用 | P1 | BatchCall API |
+| 转换钩子机制 | P1 | Hook 接口 + 内置钩子 |
+
+### 阶段四：高级特性（2-3 周）
+
+**目标**：限流、队列、更多优化
+
+| 任务 | 优先级 | 交付物 |
+|------|--------|--------|
+| 限流器实现 | P1 | 令牌桶限流 + 集成 |
+| 请求队列 | P1 | RequestQueue |
+| 连接池管理 | P2 | ConnectionPool |
+| gRPC 协议支持（可选） | P2 | gRPC 服务 |
+
+---
+
+## 6. 配置文件完整示例
+
+```json
+{
+  "mcpProxy": {
+    "baseURL": "http://localhost:9090",
+    "addr": ":9090",
+    "name": "MCP Gateway",
+    "version": "2.0.0",
+    "type": "sse",
+    "options": {
+      "panicIfInvalid": false,
+      "logEnabled": true,
+      "callTimeout": "30s",
+      "maxRetries": 3,
+      "retryDelay": "1s",
+      "retryBackoff": 2.0
+    }
+  },
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "options": {
+        "toolNamespace": "github",
+        "callTimeout": "60s",
+        "maxRetries": 2,
+        "circuitBreaker": {
+          "maxFailures": 5,
+          "resetTimeout": "30s"
+        },
+        "cache": {
+          "enabled": true,
+          "ttl": "5m",
+          "maxSize": 1000,
+          "cacheableTools": ["search_repos", "get_repository"]
+        }
+      }
+    },
+    "websocket-service": {
+      "transportType": "websocket",
+      "url": "ws://localhost:8080/mcp",
+      "headers": {
+        "Authorization": "Bearer token"
+      },
+      "options": {
+        "disablePing": false,
+        "maintenanceInterval": "30s",
+        "handshakeTimeout": "10s"
+      }
+    }
+  }
+}
+```
 
 ---
 
 ## 7. 总结
 
-本方案从五个前沿方向对 MCP Gateway 进行升级：
-1. **AI 驱动的智能网关** - 提升智能化程度
-2. **企业级可观测性** - 实现透明化运维
-3. **多租户安全体系** - 支持企业级场景
-4. **插件化生态** - 扩展生态边界
-5. **云原生化** - 提升弹性和可靠性
+本方案聚焦于**功能层面优化**，重点包括：
 
-通过分阶段实施，逐步构建下一代企业级 MCP 聚合平台。
+### 核心优化方向
+
+1. **协议支持扩展**
+   - 新增 WebSocket 协议（客户端 + 服务端）
+   - 统一协议抽象层
+   - 协议转换桥接
+
+2. **稳定性提升**
+   - 熔断器与服务隔离
+   - 分级超时与智能重试
+   - 请求队列与限流
+   - 资源管理优化
+   - 完善的错误处理
+
+3. **功能增强**
+   - 工具重命名与命名空间
+   - 工具调用缓存
+   - 批量工具调用
+   - 请求/响应转换钩子
+
+### 预期收益
+
+| 指标 | 改善 |
+|------|------|
+| 协议支持 | 3 种 → 4+ 种（含 WebSocket） |
+| 服务可用性 | 提升 20-30%（熔断+重试） |
+| 资源泄漏 | 降低 90%+ |
+| 开发效率 | 新协议接入成本降低 70% |
+| 工具冲突 | 完全解决（重命名机制） |
+
+通过分阶段实施，逐步将 MCP Gateway 打造成更稳定、更灵活、功能更丰富的 MCP 聚合平台。
