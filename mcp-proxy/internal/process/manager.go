@@ -26,6 +26,22 @@ const (
 	EventError
 )
 
+// String 返回事件类型的字符串表示
+func (e EventType) String() string {
+	switch e {
+	case EventStart:
+		return "EventStart"
+	case EventStop:
+		return "EventStop"
+	case EventRestart:
+		return "EventRestart"
+	case EventError:
+		return "EventError"
+	default:
+		return "Unknown"
+	}
+}
+
 // Event 进程事件
 type Event struct {
 	Type      EventType
@@ -118,9 +134,22 @@ func (p *Manager) startProcess() error {
 		return fmt.Errorf("failed to start process: %w", err)
 	}
 	
-	p.stdin = p.cmd.Stdin
-	p.stdout = p.cmd.Stdout
-	p.stderr = p.cmd.Stderr
+	// 设置 stdin/stdout/stderr
+	if p.cmd.Stdin != nil {
+		if w, ok := p.cmd.Stdin.(io.WriteCloser); ok {
+			p.stdin = w
+		}
+	}
+	if p.cmd.Stdout != nil {
+		if r, ok := p.cmd.Stdout.(io.ReadCloser); ok {
+			p.stdout = r
+		}
+	}
+	if p.cmd.Stderr != nil {
+		if r, ok := p.cmd.Stderr.(io.ReadCloser); ok {
+			p.stderr = r
+		}
+	}
 	
 	p.emit(Event{
 		Type:      EventStart,
@@ -295,6 +324,7 @@ func (p *Manager) Close() error {
 	// 杀死进程
 	if p.cmd.Process != nil {
 		p.cmd.Process.Kill()
+		p.cmd.Process = nil
 	}
 	
 	return nil
