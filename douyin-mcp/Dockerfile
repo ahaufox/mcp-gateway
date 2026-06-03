@@ -22,7 +22,8 @@ FROM python:3.12-slim-bookworm
 WORKDIR /app
 
 # 安装运行时的系统依赖 (ffmpeg 和 curl 用于健康检查)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
     ca-certificates \
