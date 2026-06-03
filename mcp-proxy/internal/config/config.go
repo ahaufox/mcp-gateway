@@ -33,12 +33,22 @@ type StreamableMCPClientConfig struct {
 	Timeout time.Duration     `json:"timeout"`
 }
 
+type WebSocketMCPClientConfig struct {
+	URL                  string            `json:"url"`
+	Headers              map[string]string `json:"headers"`
+	HandshakeTimeout     time.Duration     `json:"handshakeTimeout,omitempty"`
+	PingInterval         time.Duration     `json:"pingInterval,omitempty"`
+	ReconnectDelay       time.Duration     `json:"reconnectDelay,omitempty"`
+	MaxReconnectAttempts int               `json:"maxReconnectAttempts,omitempty"`
+}
+
 type MCPClientType string
 
 const (
-	MCPClientTypeStdio      MCPClientType = "stdio"
+	MCPClientTypeStdio       MCPClientType = "stdio"
 	MCPClientTypeSSE        MCPClientType = "sse"
-	MCPClientTypeStreamable MCPClientType = "streamable-http"
+	MCPClientTypeStreamable  MCPClientType = "streamable-http"
+	MCPClientTypeWebSocket   MCPClientType = "websocket"
 )
 
 type MCPServerType string
@@ -62,6 +72,13 @@ type ToolFilterConfig struct {
 	List []string       `json:"list,omitempty"`
 }
 
+type CircuitBreakerConfig struct {
+	Enabled      bool          `json:"enabled,omitempty"`
+	MaxFailures  int           `json:"maxFailures,omitempty"`
+	ResetTimeout time.Duration `json:"resetTimeout,omitempty"`
+	HalfOpenMax  int           `json:"halfOpenMax,omitempty"`
+}
+
 type OptionsV2 struct {
 	PanicIfInvalid      optional.Field[bool]        `json:"panicIfInvalid,omitempty"`
 	LogEnabled          optional.Field[bool]        `json:"logEnabled,omitempty"`
@@ -70,6 +87,19 @@ type OptionsV2 struct {
 	AuthTokens          []string                    `json:"authTokens,omitempty"`
 	ToolFilter          *ToolFilterConfig           `json:"toolFilter,omitempty"`
 	Disabled            bool                        `json:"disabled,omitempty"`
+	
+	// 超时配置
+	CallTimeout        time.Duration `json:"callTimeout,omitempty"`
+	InitializeTimeout  time.Duration `json:"initializeTimeout,omitempty"`
+	ListToolsTimeout   time.Duration `json:"listToolsTimeout,omitempty"`
+	
+	// 重试配置
+	MaxRetries        int           `json:"maxRetries,omitempty"`
+	RetryDelay        time.Duration `json:"retryDelay,omitempty"`
+	RetryBackoff      float64       `json:"retryBackoff,omitempty"`
+	
+	// 熔断器配置
+	CircuitBreaker    *CircuitBreakerConfig `json:"circuitBreaker,omitempty"`
 }
 
 type MCPProxyConfigV2 struct {
@@ -110,13 +140,20 @@ func ParseMCPClientConfigV2(conf *MCPClientConfigV2) (any, error) {
 		}, nil
 	}
 	if conf.URL != "" {
-		if conf.TransportType == MCPClientTypeStreamable {
+		switch conf.TransportType {
+		case MCPClientTypeStreamable:
 			return &StreamableMCPClientConfig{
 				URL:     conf.URL,
 				Headers: conf.Headers,
 				Timeout: conf.Timeout,
 			}, nil
-		} else {
+		case MCPClientTypeWebSocket:
+			return &WebSocketMCPClientConfig{
+				URL:     conf.URL,
+				Headers: conf.Headers,
+			}, nil
+		default:
+			// 默认 SSE
 			return &SSEMCPClientConfig{
 				URL:     conf.URL,
 				Headers: conf.Headers,
