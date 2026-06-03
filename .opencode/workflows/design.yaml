@@ -1,0 +1,4 @@
+name: System Design
+steps:
+  - agent: Architect
+    task: 设计整体架构并输出文档。
