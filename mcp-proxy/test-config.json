@@ -1,0 +1,36 @@
+{
+  "mcpProxy": {
+    "baseURL": "http://localhost:9999",
+    "addr": ":9999",
+    "name": "MCP Proxy",
+    "version": "1.0.0",
+    "type": "streamable-http",
+    "options": {
+      "panicIfInvalid": false,
+      "logEnabled": true,
+      "authTokens": ["test-token"]
+    }
+  },
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "transportType": "streamable-http",
+      "options": {
+        "disablePing": true
+      },
+      "headers": {
+        "X-Goog-Api-Key": "test-key"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "options": {
+        "toolFilter": {
+          "mode": "block",
+          "list": ["create_or_update_file", "create_repository"]
+        }
+      }
+    }
+  }
+}
