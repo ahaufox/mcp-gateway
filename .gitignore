@@ -48,3 +48,4 @@ __pycache__
 
 # Redundant docker config copies
 images/
+venv/

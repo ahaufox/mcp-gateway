@@ -1,0 +1,12 @@
+{
+  "tools": {
+    "bash": {
+      "allow": ["ls", "cat", "echo", "pwd"],
+      "ask": ["rm", "mv", "cp", "mkdir"]
+    },
+    "fileSystem": {
+      "read": true,
+      "write": true
+    }
+  }
+}
