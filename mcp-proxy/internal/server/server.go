@@ -5,7 +5,6 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
-	"html/template"
 	"io"
 	"io/fs"
 	"log"
@@ -26,12 +25,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//go:embed templates/* static/*
-var res embed.FS
-
-var (
-	templates = template.Must(template.ParseFS(res, "templates/*.html"))
-)
+//go:embed frontend/dist/*
+var frontendRes embed.FS
 
 type ServerInfo struct {
 	Name        string
@@ -179,47 +174,34 @@ func StartHTTPServer(cfg *config.Config, configPath string) error {
 		log.Printf("All clients initialized")
 	}()
 
-	httpMux.HandleFunc("/docs/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := templates.ExecuteTemplate(w, "converter.html", map[string]interface{}{
-			"ActivePage": "converter",
-		}); err != nil {
-			log.Printf("Template execution error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
+	// 前端静态资源（JS/CSS/图片等）
+	frontendFS, _ := fs.Sub(frontendRes, "frontend/dist")
+	frontendFileServer := http.FileServer(http.FS(frontendFS))
+	httpMux.Handle("/assets/", frontendFileServer)
 
-	staticFS, _ := fs.Sub(res, "static")
-	fileServer := http.FileServer(http.FS(staticFS))
-	httpMux.Handle("/static/", http.StripPrefix("/static/", fileServer))
-
-	httpMux.HandleFunc("/changelog/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := templates.ExecuteTemplate(w, "changelog.html", map[string]interface{}{
-			"ActivePage": "changelog",
-		}); err != nil {
-			log.Printf("Template execution error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 通用页面服务函数
+	servePage := func(pageName string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			content, err := frontendRes.ReadFile("frontend/dist/" + pageName + ".html")
+			if err != nil {
+				http.Error(w, "Page not found", http.StatusNotFound)
+				return
+			}
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write(content)
 		}
-	})
+	}
+
+	httpMux.HandleFunc("/docs/", servePage("converter"))
+	httpMux.HandleFunc("/changelog/", servePage("changelog"))
+	httpMux.HandleFunc("/login", servePage("login"))
 
 	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("DEBUG: Hit root handler: %s", r.URL.Path)
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
 		}
-		activeServers := getActiveServers(cfg, baseURL, mcpClients)
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err := templates.ExecuteTemplate(w, "dashboard.html", map[string]interface{}{
-			"Servers":    activeServers,
-			"ActivePage": "dashboard",
-		})
-		if err != nil {
-			log.Printf("Template execution error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+		servePage("dashboard")(w, r)
 	})
 
 	httpMux.HandleFunc("/api/servers", func(w http.ResponseWriter, r *http.Request) {
