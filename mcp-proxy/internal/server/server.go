@@ -259,6 +259,19 @@ func StartHTTPServer(cfg *config.Config, configPath string) error {
 		w.Write(content)
 	})
 
+	httpMux.HandleFunc("/api/platform-config", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("DEBUG: Hit /api/platform-config handler")
+		platformConfigPath := "platform-config.json"
+		content, err := os.ReadFile(platformConfigPath)
+		if err != nil {
+			log.Printf("Failed to read platform config: %v", err)
+			http.Error(w, "Platform config not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(content)
+	})
+
 	go func() {
 		log.Printf("Starting %s server", cfg.McpProxy.Type)
 		log.Printf("%s server listening on %s", cfg.McpProxy.Type, cfg.McpProxy.Addr)

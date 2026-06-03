@@ -1,0 +1,102 @@
+{
+  "platforms": {
+    "claude": {
+      "name": "Claude",
+      "description": "Anthropic Claude MCP 客户端",
+      "format": "claude",
+      "enabled": true,
+      "serverUrlField": "url"
+    },
+    "trae": {
+      "name": "Trae/Antigravity",
+      "description": "Trae/Antigravity MCP 客户端",
+      "format": "antigravity",
+      "enabled": true,
+      "serverUrlField": "serverUrl"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "description": "Google Gemini MCP 客户端",
+      "format": "gemini",
+      "enabled": false,
+      "serverUrlField": "url"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "description": "OpenAI MCP 客户端",
+      "format": "openai",
+      "enabled": false,
+      "serverUrlField": "url"
+    }
+  },
+  "servers": {
+    "stitch": {
+      "name": "Stitch",
+      "description": "Google Stitch MCP 服务器",
+      "category": "ai",
+      "platforms": ["claude", "trae"]
+    },
+    "github": {
+      "name": "GitHub",
+      "description": "GitHub MCP 服务器",
+      "category": "code",
+      "platforms": ["claude", "trae"]
+    },
+    "chart": {
+      "name": "Chart",
+      "description": "AntV 图表可视化 MCP 服务器",
+      "category": "visualization",
+      "platforms": ["claude", "trae"]
+    },
+    "fetch": {
+      "name": "Fetch",
+      "description": "HTTP Fetch MCP 服务器",
+      "category": "utility",
+      "platforms": ["claude", "trae"]
+    },
+    "notion": {
+      "name": "Notion",
+      "description": "Notion MCP 服务器",
+      "category": "productivity",
+      "platforms": ["claude", "trae"]
+    },
+    "jules": {
+      "name": "Jules",
+      "description": "Jules MCP 服务器",
+      "category": "ai",
+      "platforms": ["trae"]
+    },
+    "douyin": {
+      "name": "Douyin",
+      "description": "抖音 MCP 服务器",
+      "category": "media",
+      "platforms": ["trae"]
+    }
+  },
+  "categories": {
+    "ai": {
+      "name": "AI",
+      "icon": "🤖"
+    },
+    "code": {
+      "name": "代码",
+      "icon": "💻"
+    },
+    "visualization": {
+      "name": "可视化",
+      "icon": "📊"
+    },
+    "utility": {
+      "name": "工具",
+      "icon": "🔧"
+    },
+    "productivity": {
+      "name": "生产力",
+      "icon": "📝"
+    },
+    "media": {
+      "name": "媒体",
+      "icon": "🎬"
+    }
+  }
+}
