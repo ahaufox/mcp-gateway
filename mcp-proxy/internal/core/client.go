@@ -3,6 +3,7 @@ package core
 import (
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
@@ -68,6 +70,156 @@ type readCloserWrapper struct {
 	io.Closer
 }
 
+// WebSocketClient WebSocket MCP 客户端包装器
+type WebSocketClient struct {
+	mu       sync.RWMutex
+	conn     *websocket.Conn
+	url      string
+	headers  map[string]string
+	closed   bool
+	readCh   chan *mcp.JSONRPCMessage
+	writeCh  chan *mcp.JSONRPCMessage
+	errorCh  chan error
+}
+
+func NewWebSocketClient(url string, headers map[string]string) (*WebSocketClient, error) {
+	return &WebSocketClient{
+		url:     url,
+		headers: headers,
+		readCh:  make(chan *mcp.JSONRPCMessage, 100),
+		writeCh: make(chan *mcp.JSONRPCMessage, 100),
+		errorCh: make(chan error, 10),
+	}, nil
+}
+
+func (w *WebSocketClient) Connect(ctx context.Context) error {
+	header := http.Header{}
+	for k, v := range w.headers {
+		header.Set(k, v)
+	}
+
+	dialer := websocket.Dialer{}
+	conn, _, err := dialer.DialContext(ctx, w.url, header)
+	if err != nil {
+		return err
+	}
+
+	w.mu.Lock()
+	w.conn = conn
+	w.closed = false
+	w.mu.Unlock()
+
+	go w.readLoop()
+	go w.writeLoop()
+
+	return nil
+}
+
+func (w *WebSocketClient) readLoop() {
+	for {
+		_, msg, err := w.conn.ReadMessage()
+		if err != nil {
+			if !w.isClosed() {
+				w.errorCh <- err
+			}
+			return
+		}
+
+		var rpcMsg mcp.JSONRPCMessage
+		if err := json.Unmarshal(msg, &rpcMsg); err != nil {
+			log.Printf("[websocket] failed to unmarshal message: %v", err)
+			continue
+		}
+
+		select {
+		case w.readCh <- &rpcMsg:
+		default:
+		}
+	}
+}
+
+func (w *WebSocketClient) writeLoop() {
+	for msg := range w.writeCh {
+		data, err := json.Marshal(msg)
+		if err != nil {
+			log.Printf("[websocket] failed to marshal message: %v", err)
+			continue
+		}
+
+		if err := w.conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			w.errorCh <- err
+		}
+	}
+}
+
+func (w *WebSocketClient) isClosed() bool {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.closed
+}
+
+func (w *WebSocketClient) Send(ctx context.Context, msg *mcp.JSONRPCMessage) error {
+	select {
+	case w.writeCh <- msg:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (w *WebSocketClient) Receive(ctx context.Context) (*mcp.JSONRPCMessage, error) {
+	select {
+	case msg := <-w.readCh:
+		return msg, nil
+	case err := <-w.errorCh:
+		return nil, err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func (w *WebSocketClient) Ping(ctx context.Context) error {
+	w.mu.RLock()
+	conn := w.conn
+	w.mu.RUnlock()
+
+	if conn == nil {
+		return errors.New("not connected")
+	}
+
+	pingCh := make(chan error, 1)
+	go func() {
+		pingCh <- conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(5*time.Second))
+	}()
+
+	select {
+	case err := <-pingCh:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(5 * time.Second):
+		return errors.New("ping timeout")
+	}
+}
+
+func (w *WebSocketClient) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if w.closed {
+		return nil
+	}
+
+	w.closed = true
+	close(w.writeCh)
+
+	if w.conn != nil {
+		return w.conn.Close()
+	}
+	return nil
+}
+
+// Client MCP 客户端
 type Client struct {
 	mu              sync.RWMutex
 	Name            string
@@ -77,6 +229,9 @@ type Client struct {
 	Options         *config.OptionsV2
 	Status          string
 	LastError       string
+
+	// WebSocket 客户端（如果使用 WebSocket）
+	wsClient *WebSocketClient
 
 	// Metadata for dashboard
 	Description string
@@ -237,6 +392,19 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 			Options:         conf.Options,
 			circuitBreaker:  cb,
 		}, nil
+	case *config.WebSocketMCPClientConfig:
+		wsClient, err := NewWebSocketClient(v.URL, v.Headers)
+		if err != nil {
+			return nil, err
+		}
+		return &Client{
+			Name:            name,
+			NeedPing:        !conf.Options.DisablePing.OrElse(false),
+			NeedManualStart: true,
+			wsClient:        wsClient,
+			Options:         conf.Options,
+			circuitBreaker:  cb,
+		}, nil
 	}
 	return nil, errors.New("invalid client type")
 }
@@ -270,25 +438,56 @@ func (c *Client) AddToMCPServer(ctx context.Context, clientInfo mcp.Implementati
 func (c *Client) connectAndRegister(ctx context.Context) error {
 	if c.NeedManualStart {
 		log.Printf("<%s> Starting client transport", c.Name)
-		err := c.Client.Start(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to start transport: %w", err)
+		
+		if c.wsClient != nil {
+			// WebSocket 连接
+			err := c.wsClient.Connect(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to connect websocket: %w", err)
+			}
+		} else if c.Client != nil {
+			err := c.Client.Start(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to start transport: %w", err)
+			}
 		}
 	}
 
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = c.clientInfo
-	initRequest.Params.Capabilities = mcp.ClientCapabilities{
-		Experimental: make(map[string]interface{}),
+	// 初始化
+	if c.wsClient != nil {
+		// WebSocket MCP 初始化
+		initRequest := mcp.InitializeRequest{}
+		initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+		initRequest.Params.ClientInfo = c.clientInfo
+		initRequest.Params.Capabilities = mcp.ClientCapabilities{
+			Experimental: make(map[string]interface{}),
+		}
+		
+		err := c.wsClient.Send(ctx, initRequest.JSONRPCRequest())
+		if err != nil {
+			return fmt.Errorf("failed to send initialize: %w", err)
+		}
+		
+		// 等待响应
+		_, err = c.wsClient.Receive(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to receive initialize response: %w", err)
+		}
+	} else {
+		initRequest := mcp.InitializeRequest{}
+		initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
+		initRequest.Params.ClientInfo = c.clientInfo
+		initRequest.Params.Capabilities = mcp.ClientCapabilities{
+			Experimental: make(map[string]interface{}),
+		}
+
+		_, err := c.Client.Initialize(ctx, initRequest)
+		if err != nil {
+			return fmt.Errorf("failed to initialize: %w", err)
+		}
 	}
 
-	_, err := c.Client.Initialize(ctx, initRequest)
-	if err != nil {
-		return fmt.Errorf("failed to initialize: %w", err)
-	}
-
-	err = c.addToolsToServer(ctx, c.mcpServer)
+	err := c.addToolsToServer(ctx, c.mcpServer)
 	if err != nil {
 		return fmt.Errorf("failed to add tools: %w", err)
 	}
@@ -324,7 +523,14 @@ func (c *Client) startMaintenanceTask(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if c.GetStatus() == "Connected" {
-				if err := c.Client.Ping(ctx); err != nil {
+				var err error
+				if c.wsClient != nil {
+					err = c.wsClient.Ping(ctx)
+				} else if c.Client != nil {
+					err = c.Client.Ping(ctx)
+				}
+				
+				if err != nil {
 					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 						return
 					}
@@ -386,7 +592,32 @@ func (c *Client) addToolsToServer(ctx context.Context, mcpServer *server.MCPServ
 	}
 
 	for {
-		tools, err := c.Client.ListTools(ctx, toolsRequest)
+		var tools *mcp.ListToolsResult
+		var err error
+		
+		if c.wsClient != nil {
+			// WebSocket 客户端
+			listToolsReq := mcp.ListToolsRequest{}
+			err = c.wsClient.Send(ctx, listToolsReq.JSONRPCRequest())
+			if err != nil {
+				return err
+			}
+			
+			resp, recvErr := c.wsClient.Receive(ctx)
+			if recvErr != nil {
+				return recvErr
+			}
+			
+			tools = &mcp.ListToolsResult{}
+			if resp.Result != nil {
+				if data, marshalErr := json.Marshal(resp.Result); marshalErr == nil {
+					json.Unmarshal(data, tools)
+				}
+			}
+		} else {
+			tools, err = c.Client.ListTools(ctx, toolsRequest)
+		}
+		
 		if err != nil {
 			return err
 		}
@@ -428,8 +659,30 @@ func (c *Client) createWrappedCallTool(toolName string) func(context.Context, mc
 			defer cancel()
 		}
 		
-		// 调用工具
-		result, err := c.Client.CallTool(callCtx, req)
+		var result *mcp.CallToolResult
+		var err error
+		
+		if c.wsClient != nil {
+			// WebSocket 调用
+			err = c.wsClient.Send(callCtx, req.JSONRPCRequest())
+			if err != nil {
+				result = nil
+			} else {
+				resp, recvErr := c.wsClient.Receive(callCtx)
+				if recvErr != nil {
+					err = recvErr
+				} else if resp.Error != nil {
+					err = errors.New(resp.Error.Message)
+				} else if resp.Result != nil {
+					result = &mcp.CallToolResult{}
+					if data, marshalErr := json.Marshal(resp.Result); marshalErr == nil {
+						json.Unmarshal(data, result)
+					}
+				}
+			}
+		} else {
+			result, err = c.Client.CallTool(callCtx, req)
+		}
 		
 		// 记录熔断器结果
 		if c.circuitBreaker != nil {
@@ -447,6 +700,11 @@ func (c *Client) createWrappedCallTool(toolName string) func(context.Context, mc
 }
 
 func (c *Client) addPromptsToServer(ctx context.Context, mcpServer *server.MCPServer) error {
+	if c.wsClient != nil {
+		// WebSocket 暂不支持 prompts
+		return nil
+	}
+	
 	promptsRequest := mcp.ListPromptsRequest{}
 	for {
 		prompts, err := c.Client.ListPrompts(ctx, promptsRequest)
@@ -471,6 +729,11 @@ func (c *Client) addPromptsToServer(ctx context.Context, mcpServer *server.MCPSe
 }
 
 func (c *Client) addResourcesToServer(ctx context.Context, mcpServer *server.MCPServer) error {
+	if c.wsClient != nil {
+		// WebSocket 暂不支持 resources
+		return nil
+	}
+	
 	resourcesRequest := mcp.ListResourcesRequest{}
 	for {
 		resources, err := c.Client.ListResources(ctx, resourcesRequest)
@@ -496,12 +759,17 @@ func (c *Client) addResourcesToServer(ctx context.Context, mcpServer *server.MCP
 			break
 		}
 		resourcesRequest.Params.Cursor = resources.NextCursor
-
 	}
+
 	return nil
 }
 
 func (c *Client) addResourceTemplatesToServer(ctx context.Context, mcpServer *server.MCPServer) error {
+	if c.wsClient != nil {
+		// WebSocket 暂不支持 resource templates
+		return nil
+	}
+	
 	resourceTemplatesRequest := mcp.ListResourceTemplatesRequest{}
 	for {
 		resourceTemplates, err := c.Client.ListResourceTemplates(ctx, resourceTemplatesRequest)
@@ -531,6 +799,9 @@ func (c *Client) addResourceTemplatesToServer(ctx context.Context, mcpServer *se
 }
 
 func (c *Client) Close() error {
+	if c.wsClient != nil {
+		return c.wsClient.Close()
+	}
 	if c.Client != nil {
 		return c.Client.Close()
 	}
