@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "title": "Claude 3.5 Sonnet",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  ],
+  "customCommands": [
+    {
+      "name": "review",
+      "prompt": "请用中文审查以下代码并提供改进建议：\n{{{ input }}}",
+      "description": "代码审查"
+    }
+  ],
+  "contextProviders": [
+    {
+      "name": "terminal",
+      "params": {}
+    }
+  ]
+}
