@@ -16,7 +16,9 @@ import (
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/circuitbreaker"
 	"github.com/ahaufox/mcp-gateway/mcp-proxy/internal/config"
+	mcperrors "github.com/ahaufox/mcp-gateway/mcp-proxy/internal/errors"
 )
 
 var DefaultPingInterval = 30 * time.Second
@@ -85,6 +87,9 @@ type Client struct {
 	// Internal state for reconnection
 	clientInfo mcp.Implementation
 	mcpServer  *server.MCPServer
+	
+	// 熔断器
+	circuitBreaker *circuitbreaker.CircuitBreaker
 }
 
 func (c *Client) GetStatus() string {
@@ -152,6 +157,23 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 	if pErr != nil {
 		return nil, pErr
 	}
+	
+	// 创建熔断器
+	var cb *circuitbreaker.CircuitBreaker
+	if conf.Options != nil && conf.Options.CircuitBreaker != nil && conf.Options.CircuitBreaker.Enabled {
+		cfg := circuitbreaker.DefaultConfig()
+		if conf.Options.CircuitBreaker.MaxFailures > 0 {
+			cfg.MaxFailures = conf.Options.CircuitBreaker.MaxFailures
+		}
+		if conf.Options.CircuitBreaker.ResetTimeout > 0 {
+			cfg.ResetTimeout = conf.Options.CircuitBreaker.ResetTimeout
+		}
+		if conf.Options.CircuitBreaker.HalfOpenMax > 0 {
+			cfg.HalfOpenMax = conf.Options.CircuitBreaker.HalfOpenMax
+		}
+		cb = circuitbreaker.New(name, cfg)
+	}
+	
 	switch v := clientInfo.(type) {
 	case *config.StdioMCPClientConfig:
 		envs := make([]string, 0, len(v.Env))
@@ -168,10 +190,11 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 		}
 
 		return &Client{
-			Name:        name,
-			Description: conf.Description,
-			Client:      mcpClient,
-			Options:     conf.Options,
+			Name:           name,
+			Description:    conf.Description,
+			Client:         mcpClient,
+			Options:        conf.Options,
+			circuitBreaker: cb,
 		}, nil
 	case *config.SSEMCPClientConfig:
 		var options []transport.ClientOption
@@ -188,6 +211,7 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 			NeedManualStart: true,
 			Client:          mcpClient,
 			Options:         conf.Options,
+			circuitBreaker:  cb,
 		}, nil
 	case *config.StreamableMCPClientConfig:
 		var options []transport.StreamableHTTPCOption
@@ -211,6 +235,7 @@ func NewMCPClient(name string, conf *config.MCPClientConfigV2) (*Client, error) 
 			NeedManualStart: true,
 			Client:          mcpClient,
 			Options:         conf.Options,
+			circuitBreaker:  cb,
 		}, nil
 	}
 	return nil, errors.New("invalid client type")
@@ -373,7 +398,8 @@ func (c *Client) addToolsToServer(ctx context.Context, mcpServer *server.MCPServ
 		for _, tool := range tools.Tools {
 			if filterFunc(tool.Name) {
 				log.Printf("<%s> Adding tool %s", c.Name, tool.Name)
-				mcpServer.AddTool(tool, c.Client.CallTool)
+				wrappedCall := c.createWrappedCallTool(tool.Name)
+				mcpServer.AddTool(tool, wrappedCall)
 			}
 		}
 		if tools.NextCursor == "" {
@@ -383,6 +409,41 @@ func (c *Client) addToolsToServer(ctx context.Context, mcpServer *server.MCPServ
 	}
 
 	return nil
+}
+
+func (c *Client) createWrappedCallTool(toolName string) func(context.Context, mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		// 如果配置了熔断器，先检查
+		if c.circuitBreaker != nil {
+			if err := c.circuitBreaker.Allow(); err != nil {
+				return nil, mcperrors.Wrap(err, mcperrors.ErrCodeCircuitOpen, "circuit breaker open").WithService(c.Name).WithTool(toolName)
+			}
+		}
+		
+		// 应用超时
+		callCtx := ctx
+		if c.Options != nil && c.Options.CallTimeout > 0 {
+			var cancel context.CancelFunc
+			callCtx, cancel = context.WithTimeout(ctx, c.Options.CallTimeout)
+			defer cancel()
+		}
+		
+		// 调用工具
+		result, err := c.Client.CallTool(callCtx, req)
+		
+		// 记录熔断器结果
+		if c.circuitBreaker != nil {
+			c.circuitBreaker.RecordResult(err == nil)
+		}
+		
+		// 包装错误
+		if err != nil {
+			wrappedErr := mcperrors.Wrap(err, mcperrors.ErrCodeServer, "tool call failed").WithService(c.Name).WithTool(toolName)
+			return nil, wrappedErr
+		}
+		
+		return result, nil
+	}
 }
 
 func (c *Client) addPromptsToServer(ctx context.Context, mcpServer *server.MCPServer) error {
