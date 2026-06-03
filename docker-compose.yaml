@@ -2,8 +2,8 @@ services:
   app:
     image: mcp-gateway/proxy:latest
     build:
-      context: ./mcp-proxy
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: mcp-proxy/Dockerfile
     volumes:
       - ./mcp-proxy/config.json:/config/config.json
     ports:

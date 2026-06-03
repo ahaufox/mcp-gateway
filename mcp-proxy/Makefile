@@ -5,9 +5,16 @@ CURRENT_ARCH := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 LD_FLAGS=-ldflags "-X main.BuildVersion=$(BUILD)"
 GO_BUILD=CGO_ENABLED=0 go build $(LD_FLAGS)
 
+.PHONY: build-web
+build-web:
+	cd ../web && npm ci && npm run build
+
 .PHONY: build
 build:
 	$(GO_BUILD) -o $(BUILD_DIR)/ ./...
+
+.PHONY: build-all
+build-all: build-web build
 
 .PHONY: buildLinuxX86
 buildLinuxX86:

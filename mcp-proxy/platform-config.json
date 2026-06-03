@@ -12,7 +12,7 @@
       "description": "Trae/Antigravity MCP 客户端",
       "format": "antigravity",
       "enabled": true,
-      "serverUrlField": "serverUrl"
+      "serverUrlField": "url"
     },
     "gemini": {
       "name": "Gemini",
@@ -34,43 +34,67 @@
       "name": "Stitch",
       "description": "Google Stitch MCP 服务器",
       "category": "ai",
-      "platforms": ["claude", "trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "github": {
       "name": "GitHub",
       "description": "GitHub MCP 服务器",
       "category": "code",
-      "platforms": ["claude", "trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "chart": {
       "name": "Chart",
       "description": "AntV 图表可视化 MCP 服务器",
       "category": "visualization",
-      "platforms": ["claude", "trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "fetch": {
       "name": "Fetch",
       "description": "HTTP Fetch MCP 服务器",
       "category": "utility",
-      "platforms": ["claude", "trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "notion": {
       "name": "Notion",
       "description": "Notion MCP 服务器",
       "category": "productivity",
-      "platforms": ["claude", "trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
+    },
+    "playwright": {
+      "name": "Playwright",
+      "description": "Playwright 浏览器自动化 MCP 服务器",
+      "category": "utility",
+      "platforms": ["claude", "trae", "gemini", "openai"]
+    },
+    "sequential-thinking": {
+      "name": "Sequential Thinking",
+      "description": "结构化思考推理 MCP 服务器",
+      "category": "ai",
+      "platforms": ["claude", "trae", "gemini", "openai"]
+    },
+    "context7": {
+      "name": "Context7",
+      "description": "实时官方文档检索 MCP 服务器",
+      "category": "code",
+      "platforms": ["claude", "trae", "gemini", "openai"]
+    },
+    "reactbits": {
+      "name": "ReactBits",
+      "description": "135+ 动效 React 组件库 MCP 服务器",
+      "category": "visualization",
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "jules": {
       "name": "Jules",
       "description": "Jules MCP 服务器",
       "category": "ai",
-      "platforms": ["trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     },
     "douyin": {
       "name": "Douyin",
       "description": "抖音 MCP 服务器",
       "category": "media",
-      "platforms": ["trae"]
+      "platforms": ["claude", "trae", "gemini", "openai"]
     }
   },
   "categories": {
