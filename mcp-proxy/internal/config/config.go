@@ -33,12 +33,22 @@ type StreamableMCPClientConfig struct {
 	Timeout time.Duration     `json:"timeout"`
 }
 
+type WebSocketMCPClientConfig struct {
+	URL                  string            `json:"url"`
+	Headers              map[string]string `json:"headers"`
+	HandshakeTimeout     time.Duration     `json:"handshakeTimeout,omitempty"`
+	PingInterval         time.Duration     `json:"pingInterval,omitempty"`
+	ReconnectDelay       time.Duration     `json:"reconnectDelay,omitempty"`
+	MaxReconnectAttempts int               `json:"maxReconnectAttempts,omitempty"`
+}
+
 type MCPClientType string
 
 const (
-	MCPClientTypeStdio      MCPClientType = "stdio"
+	MCPClientTypeStdio       MCPClientType = "stdio"
 	MCPClientTypeSSE        MCPClientType = "sse"
-	MCPClientTypeStreamable MCPClientType = "streamable-http"
+	MCPClientTypeStreamable  MCPClientType = "streamable-http"
+	MCPClientTypeWebSocket   MCPClientType = "websocket"
 )
 
 type MCPServerType string
@@ -63,10 +73,10 @@ type ToolFilterConfig struct {
 }
 
 type CircuitBreakerConfig struct {
-    Enabled      bool          `json:"enabled,omitempty"`
-    MaxFailures  int           `json:"maxFailures,omitempty"`
-    ResetTimeout time.Duration `json:"resetTimeout,omitempty"`
-    HalfOpenMax  int           `json:"halfOpenMax,omitempty"`
+	Enabled      bool          `json:"enabled,omitempty"`
+	MaxFailures  int           `json:"maxFailures,omitempty"`
+	ResetTimeout time.Duration `json:"resetTimeout,omitempty"`
+	HalfOpenMax  int           `json:"halfOpenMax,omitempty"`
 }
 
 type OptionsV2 struct {
@@ -130,13 +140,20 @@ func ParseMCPClientConfigV2(conf *MCPClientConfigV2) (any, error) {
 		}, nil
 	}
 	if conf.URL != "" {
-		if conf.TransportType == MCPClientTypeStreamable {
+		switch conf.TransportType {
+		case MCPClientTypeStreamable:
 			return &StreamableMCPClientConfig{
 				URL:     conf.URL,
 				Headers: conf.Headers,
 				Timeout: conf.Timeout,
 			}, nil
-		} else {
+		case MCPClientTypeWebSocket:
+			return &WebSocketMCPClientConfig{
+				URL:     conf.URL,
+				Headers: conf.Headers,
+			}, nil
+		default:
+			// 默认 SSE
 			return &SSEMCPClientConfig{
 				URL:     conf.URL,
 				Headers: conf.Headers,
