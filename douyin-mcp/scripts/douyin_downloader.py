@@ -53,7 +53,7 @@ def check_dependencies():
 check_dependencies()
 
 import requests  # noqa: E402
-import ffmpeg    # noqa: E402
+import ffmpeg  # type: ignore[import-not-found] # noqa: E402
 
 # 请求头，模拟移动端访问
 HEADERS = {
@@ -247,9 +247,12 @@ class DouyinProcessor:
 
     def transcribe_single_audio(self, audio_path: Path) -> str:
         """转录单个音频文件"""
+        f = open(audio_path, 'rb')
         files = {
-            'file': (audio_path.name, open(audio_path, 'rb'), 'audio/mpeg'),
-            'model': (None, self.model)
+            'file': (audio_path.name, f, 'audio/mpeg')
+        }
+        data = {
+            'model': self.model
         }
 
         headers = {
@@ -257,7 +260,7 @@ class DouyinProcessor:
         }
 
         try:
-            response = requests.post(self.api_base_url, files=files, headers=headers)
+            response = requests.post(self.api_base_url, files=files, data=data, headers=headers)
             response.raise_for_status()
 
             result = response.json()
@@ -269,7 +272,7 @@ class DouyinProcessor:
         except Exception as e:
             raise Exception(f"提取文字时出错: {str(e)}")
         finally:
-            files['file'][1].close()
+            f.close()
 
     def extract_text_from_audio(self, audio_path: Path, show_progress: bool = True) -> str:
         """从音频文件中提取文字（支持大文件自动分段）"""
