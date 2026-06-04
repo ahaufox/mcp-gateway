@@ -160,7 +160,27 @@ export const Converter: React.FC = () => {
 
   const handleCopy = (text: string, type: string) => {
     if (!text) return;
-    navigator.clipboard.writeText(text);
+
+    const fallbackCopy = (str: string) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = str;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } catch (e) {
+        console.error("copy failed", e);
+      }
+      document.body.removeChild(textarea);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      fallbackCopy(text);
+    }
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2000);
   };
