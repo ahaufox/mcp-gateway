@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 import {
   ArrowRightLeft,
   Copy,
@@ -90,6 +91,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 // ─── 组件 ──────────────────────────────────────────────
 
 export const Converter: React.FC = () => {
+  const { theme } = useTheme();
   const [proxyConfig, setProxyConfig] = useState<any>(null);
   const [overrideToken, setOverrideToken] = useState("");
   const [availableServers, setAvailableServers] = useState<string[]>([]);
@@ -176,11 +178,11 @@ export const Converter: React.FC = () => {
       {/* ── 头部 ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+          <h1 className={`text-3xl font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
             <ArrowRightLeft className="w-7 h-7 text-violet-600 dark:text-violet-500" />
             <span>配置格式转换器</span>
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+          <p className={`text-sm mt-1.5 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
             选择目标客户端，一键生成兼容的 MCP 配置文件 — 支持 {CLIENTS.length} 种主流 IDE、终端与 AI 平台
           </p>
         </div>
@@ -197,29 +199,29 @@ export const Converter: React.FC = () => {
       {/* ── 使用指南 弹出框 ── */}
       {showGuide && (
         <div className="relative">
-          <div className="glass-card rounded-2xl p-5 border border-violet-200 dark:border-violet-500/20 bg-violet-50/80 dark:bg-violet-500/5">
+          <div className={`glass-card rounded-2xl p-5 border ${theme === "dark" ? "border-violet-500/20" : "border-violet-200"} ${theme === "dark" ? "bg-violet-500/5" : "bg-violet-50/80"}`}>
             <div className="flex items-start justify-between mb-3">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">快速使用指南</h3>
-              <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer">
+              <h3 className={`text-base font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>快速使用指南</h3>
+              <button onClick={() => setShowGuide(false)} className={`cursor-pointer ${theme === "dark" ? "text-gray-400 hover:text-white" : "text-gray-400 hover:text-gray-600"}`}>
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-3 text-sm leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
               <div className="flex items-start gap-2">
                 <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5 shrink-0">①</span>
-                <span><strong className="text-gray-800 dark:text-gray-200">选择目标客户端</strong>：点击下方选项卡，切换要生成的配置格式，支持模糊搜索</span>
+                <span><strong className={theme === "dark" ? "text-gray-200" : "text-gray-800"}>选择目标客户端</strong>：点击下方选项卡，切换要生成的配置格式，支持模糊搜索</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5 shrink-0">②</span>
-                <span><strong className="text-gray-800 dark:text-gray-200">选择服务器</strong>：勾选要导出的 MCP 服务器，配置自动实时生成</span>
+                <span><strong className={theme === "dark" ? "text-gray-200" : "text-gray-800"}>选择服务器</strong>：勾选要导出的 MCP 服务器，配置自动实时生成</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5 shrink-0">③</span>
-                <span><strong className="text-gray-800 dark:text-gray-200">Token 管理</strong>：可统一覆盖所有服务器的 Authorization Bearer Token</span>
+                <span><strong className={theme === "dark" ? "text-gray-200" : "text-gray-800"}>Token 管理</strong>：可统一覆盖所有服务器的 Authorization Bearer Token</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5 shrink-0">④</span>
-                <span><strong className="text-gray-800 dark:text-gray-200">部署路径</strong>：将生成的 JSON 复制到对应客户端配置目录即可生效</span>
+                <span><strong className={theme === "dark" ? "text-gray-200" : "text-gray-800"}>部署路径</strong>：将生成的 JSON 复制到对应客户端配置目录即可生效</span>
               </div>
             </div>
           </div>
@@ -236,7 +238,7 @@ export const Converter: React.FC = () => {
       {/* ── 目标客户端选项卡 (换行) ── */}
       <section>
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">选择目标客户端</span>
+          <span className={`text-xs font-bold uppercase tracking-widest ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}>选择目标客户端</span>
           <span className="text-xs text-violet-600 dark:text-violet-400">— 点击选项卡直接切换输出格式</span>
         </div>
 
@@ -244,16 +246,16 @@ export const Converter: React.FC = () => {
         <div className="mb-3">
           <div className="relative max-w-xs">
             <input
-              type="text"
-              placeholder="搜索客户端..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500/50 transition-all"
-            />
+            type="text"
+            placeholder="搜索客户端..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`w-full border rounded-xl px-3 py-2 text-sm transition-all focus:outline-none focus:border-violet-400 ${theme === "dark" ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-violet-500/50" : "bg-white border-gray-200 text-gray-800 placeholder-gray-400"}`}
+          />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white cursor-pointer"
+                className={`absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer ${theme === "dark" ? "text-gray-500 hover:text-white" : "text-gray-400 hover:text-gray-600"}`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -272,7 +274,7 @@ export const Converter: React.FC = () => {
           ).map(([category, clients]) => (
             <React.Fragment key={category}>
               <div className="flex items-center w-full mt-1 first:mt-0">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-gray-300 dark:text-gray-600">
+                <span className={`text-[11px] font-bold uppercase tracking-widest ${theme === "dark" ? "text-gray-600" : "text-gray-300"}`}>
                   {CATEGORY_LABELS[category]}
                 </span>
               </div>
@@ -286,11 +288,13 @@ export const Converter: React.FC = () => {
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-300 cursor-pointer group ${
                       isActive
                         ? `${c.bg} ${c.border} ${c.text} ring-1 ${c.ring} shadow-sm`
-                        : "bg-gray-50 dark:bg-white/[0.02] border-gray-100 dark:border-white/5 text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-200 dark:hover:border-white/10 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
+                        : theme === "dark"
+                          ? "bg-white/[0.02] border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10 hover:bg-white/[0.04]"
+                          : "bg-gray-50 border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-100"
                     }`}
                     title={`${client.name}: ${client.desc}`}
                   >
-                    <client.icon className={`w-4 h-4 ${isActive ? c.text : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400"} transition-colors`} />
+                    <client.icon className={`w-4 h-4 ${isActive ? c.text : theme === "dark" ? "text-gray-500 group-hover:text-gray-400" : "text-gray-400 group-hover:text-gray-600"} transition-colors`} />
                     <span className="text-sm font-semibold whitespace-nowrap">{client.name}</span>
                   </button>
                 );
@@ -306,34 +310,38 @@ export const Converter: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           {/* 服务器选择 */}
           <div className="glass-card rounded-3xl p-6">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Server className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-              <span>选择要导出的服务器</span>
-            </h3>
+            <h3 className={`text-base font-bold mb-4 flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+            <Server className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <span>选择要导出的服务器</span>
+          </h3>
 
-            {availableServers.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 italic">暂无可用服务器配置</p>
-            ) : (
+          {availableServers.length === 0 ? (
+            <p className={`text-sm italic ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>暂无可用服务器配置</p>
+          ) : (
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto pr-1">
                   {availableServers.map(server => (
                     <button
-                      key={server}
-                      onClick={() => toggleServer(server)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 cursor-pointer ${
-                        selectedServers.has(server)
-                          ? "bg-violet-50 dark:bg-violet-500/10 border-violet-300 dark:border-violet-500/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/20"
-                          : "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5 text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 hover:border-gray-300 dark:hover:border-white/10"
-                      }`}
-                    >
-                      {server}
-                    </button>
+                    key={server}
+                    onClick={() => toggleServer(server)}
+                    className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 cursor-pointer ${
+                      selectedServers.has(server)
+                        ? theme === "dark"
+                          ? "bg-violet-500/10 border-violet-500/30 text-violet-300 hover:bg-violet-500/20"
+                          : "bg-violet-50 border-violet-300 text-violet-700 hover:bg-violet-100"
+                        : theme === "dark"
+                          ? "bg-white/5 border-white/5 text-gray-500 hover:text-gray-400 hover:border-white/10"
+                          : "bg-gray-50 border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300"
+                    }`}
+                  >
+                    {server}
+                  </button>
                   ))}
                 </div>
 
-                <div className="flex gap-3 border-t border-gray-100 dark:border-white/5 pt-3">
-                  <button onClick={() => setSelectedServers(new Set(availableServers))} className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 cursor-pointer uppercase tracking-wider">全选</button>
-                  <button onClick={() => setSelectedServers(new Set())} className="text-xs font-bold text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 cursor-pointer uppercase tracking-wider">清空</button>
+                <div className={`flex gap-3 border-t pt-3 ${theme === "dark" ? "border-white/5" : "border-gray-200"}`}>
+                  <button onClick={() => setSelectedServers(new Set(availableServers))} className={`text-xs font-bold cursor-pointer uppercase tracking-wider ${theme === "dark" ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-500"}`}>全选</button>
+                  <button onClick={() => setSelectedServers(new Set())} className={`text-xs font-bold cursor-pointer uppercase tracking-wider ${theme === "dark" ? "text-gray-500 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"}`}>清空</button>
                 </div>
               </div>
             )}
@@ -341,17 +349,17 @@ export const Converter: React.FC = () => {
 
           {/* Token 重写 */}
           <div className="glass-card rounded-3xl p-6">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-              <span>覆盖 Authorization Token (可选)</span>
-            </h3>
-            <input
-              type="text"
-              placeholder="若填入，导出的所有服务器都将强行使用该 Token"
-              value={overrideToken}
-              onChange={(e) => setOverrideToken(e.target.value)}
-              className="w-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-violet-400 dark:focus:border-violet-500/50 transition-all"
-            />
+            <h3 className={`text-base font-bold mb-4 flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+            <Settings className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <span>覆盖 Authorization Token (可选)</span>
+          </h3>
+          <input
+            type="text"
+            placeholder="若填入，导出的所有服务器都将强行使用该 Token"
+            value={overrideToken}
+            onChange={(e) => setOverrideToken(e.target.value)}
+            className={`w-full border rounded-2xl px-4 py-3 text-sm transition-all focus:outline-none focus:border-violet-400 ${theme === "dark" ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-violet-500/50" : "bg-white border-gray-200 text-gray-800 placeholder-gray-400"}`}
+          />
             <div className="flex gap-2 items-start mt-3 text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
               <Info className="w-3.5 h-3.5 shrink-0 text-violet-500 mt-0.5" />
               <span>如果不填写，转换器将默认读取 <code className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded">mcpServers.&lt;name&gt;.options.authTokens[0]</code>，或使用全局 <code className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded">mcpProxy.options.authTokens[0]</code> 作为备用。</span>
@@ -368,13 +376,13 @@ export const Converter: React.FC = () => {
                   <selectedClientDef.icon className={`w-5 h-5 ${COLOR_MAP[selectedClientDef.color].text}`} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3 className={`text-base font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                     {selectedClientDef.name} 配置
-                    <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">
+                    <span className={`ml-2 text-xs font-normal ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}>
                       {selectedClientDef.fmtType === "proxy" ? "原生格式" : selectedClientDef.fmtType === "trae" ? "Trae 格式" : "Claude 兼容格式"}
                     </span>
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                  <p className={`text-xs mt-0.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
                     {selectedClientDef.fmtType === "proxy"
                       ? "直接输出 mcp-proxy 原始配置"
                       : `目标存放路径：${selectedClientDef.configPath}`}
@@ -383,7 +391,7 @@ export const Converter: React.FC = () => {
               </div>
               <button
                 onClick={() => handleCopy(currentOutput, selectedClient)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white cursor-pointer transition-all duration-300"
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-sm font-semibold cursor-pointer transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 text-gray-300 hover:text-white" : "bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-800"}`}
               >
                 {copiedType === selectedClient ? (
                   <>
@@ -401,7 +409,7 @@ export const Converter: React.FC = () => {
             <textarea
               readOnly
               value={currentOutput}
-              className="flex-1 bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl p-4 text-sm font-mono text-gray-800 dark:text-gray-300 resize-none overflow-y-auto leading-relaxed focus:outline-none"
+              className={`flex-1 border rounded-2xl p-4 text-sm font-mono resize-none overflow-y-auto leading-relaxed focus:outline-none ${theme === "dark" ? "bg-black/40 border-white/5 text-gray-300 placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400"}`}
               placeholder="勾选左侧服务器并选择上方客户端选项卡，自动生成输出..."
             />
           </div>

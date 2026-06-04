@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "../context/ThemeContext";
 import { History, GitCommit, Calendar, Tag, Sparkles, Code2 } from "lucide-react";
 
 interface ChangelogItem {
@@ -68,6 +69,7 @@ const changelogData: ChangelogItem[] = [
 ];
 
 export const Changelog: React.FC = () => {
+  const { theme } = useTheme();
   const totalReleases = changelogData.length;
   const totalChanges = changelogData.reduce((sum, item) => sum + item.items.length, 0);
   const firstReleaseDate = changelogData[changelogData.length - 1]?.date;
@@ -77,11 +79,11 @@ export const Changelog: React.FC = () => {
     <div className="space-y-8 stagger-in">
       {/* 头部 */}
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+        <h1 className={`text-2xl font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
           <History className="w-6 h-6 text-violet-500" />
           <span>更新日志</span>
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className={`text-sm mt-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
           追踪 mcp-proxy 的版本迭代历程与核心技术演进
         </p>
       </div>
@@ -102,15 +104,15 @@ export const Changelog: React.FC = () => {
           };
           const c = colorMap[item.color];
           return (
-            <div key={idx} className={`glass-card rounded-2xl p-4 border border-white/10 flex items-center gap-3`}>
+            <div key={idx} className={`glass-card rounded-2xl p-4 border flex items-center gap-3 ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
               <div className={`p-2 rounded-xl ${c.bg} border ${c.border} shrink-0`}>
                 <item.icon className={`w-5 h-5 ${c.text}`} />
               </div>
               <div className="min-w-0">
-                <div className={`text-lg font-extrabold text-white truncate ${item.isText ? "text-base" : ""}`}>
+                <div className={`text-lg font-extrabold truncate ${item.isText ? "text-base" : ""} ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                   {item.value}{!item.isText && item.unit && <span className={`text-sm font-bold ${c.text} ml-0.5`}>{item.unit}</span>}
                 </div>
-                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{item.label}</div>
+                <div className={`text-[10px] font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{item.label}</div>
               </div>
             </div>
           );
@@ -129,7 +131,7 @@ export const Changelog: React.FC = () => {
             {/* 卡片 */}
             <div className="glass-card rounded-3xl p-6 md:p-8 hover:shadow-[0_4px_24px_rgba(99,102,241,0.02)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                <h2 className={`text-lg font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
                   <GitCommit className="w-4 h-4 text-violet-400" />
                   <span>{version.version}</span>
                 </h2>
@@ -140,7 +142,7 @@ export const Changelog: React.FC = () => {
 
               <ul className="space-y-3.5">
                 {version.items.map((bullet, bidx) => (
-                  <li key={bidx} className="flex items-start text-xs text-gray-400 leading-relaxed">
+                  <li key={bidx} className={`flex items-start text-xs leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${version.dotColor} shrink-0 mt-1.5 mr-3 opacity-60`} />
                     <span>{bullet}</span>
                   </li>
