@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
+import { useTheme } from "../context/ThemeContext";
 import {
   Server,
   CheckCircle2,
@@ -127,6 +128,7 @@ const statusMeta = (status: StatusKey) => {
 };
 
 export const Dashboard: React.FC = () => {
+  const { theme } = useTheme();
   const [servers, setServers] = useState<ServerInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -220,7 +222,7 @@ export const Dashboard: React.FC = () => {
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
               实时监控你的 <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400">MCP 网关</span>
             </h1>
-            <p className="text-sm md:text-base text-gray-400 mt-3 max-w-2xl leading-relaxed">
+            <p className={`text-sm md:text-base mt-3 max-w-2xl leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
               本仪表盘将所有接入的 MCP Server 的状态、路由端点、工具 / 提示 / 资源清单集中呈现，
               并支持 15 秒自动刷新与搜索过滤，帮助你第一时间发现接入异常。
             </p>
@@ -308,13 +310,13 @@ export const Dashboard: React.FC = () => {
                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:bg-white/10 focus:border-violet-500/50 focus:outline-none transition-all duration-300"
               />
             </div>
-            <span className="text-[11px] text-gray-500 hidden md:inline">
+            <span className={`text-[11px] hidden md:inline ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
               {filteredServers.length} / {servers.length} 匹配
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-gray-500 hidden md:inline">
+            <span className={`text-[11px] hidden md:inline ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
               {lastUpdated ? `最后更新 ${lastUpdated.toLocaleTimeString()}` : "加载中..."}
             </span>
             <button
@@ -423,22 +425,22 @@ export const Dashboard: React.FC = () => {
                         </span>
                       </div>
                       {server.Description && (
-                        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-1 max-w-xl">
+                        <p className={`text-xs mt-1 leading-relaxed line-clamp-1 max-w-xl ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
                           {server.Description}
                         </p>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-gray-500">
-                        <span className="flex items-center gap-1.5 bg-black/30 px-2 py-0.5 rounded-md font-mono text-gray-400">
+                      <div className={`flex flex-wrap items-center gap-3 mt-2 text-[11px] ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
+                        <span className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono ${theme === "dark" ? "bg-black/30 text-gray-400" : "bg-gray-100 text-gray-600"}`}>
                           <Layers className="w-3 h-3" />
                           {server.Route || "/"}
                         </span>
-                        <span className="flex items-center gap-1 text-gray-500">
+                        <span className={`flex items-center gap-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
                           <Cpu className="w-3 h-3" /> {tools.length} Tools
                         </span>
-                        <span className="flex items-center gap-1 text-gray-500">
+                        <span className={`flex items-center gap-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
                           <Code2 className="w-3 h-3" /> {prompts.length} Prompts
                         </span>
-                        <span className="flex items-center gap-1 text-gray-500">
+                        <span className={`flex items-center gap-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
                           <FileText className="w-3 h-3" /> {resources.length} Resources
                         </span>
                       </div>
@@ -466,7 +468,7 @@ export const Dashboard: React.FC = () => {
 
                 {/* 展开区域 */}
                 {isExpanded && (
-                  <div className="border-t border-white/5 bg-black/20 p-6 space-y-5">
+                  <div className={`border-t p-6 space-y-5 ${theme === "dark" ? "border-white/5 bg-black/20" : "border-gray-200 bg-gray-50/50"}`}>
                     {/* 错误信息 */}
                     {server.Error && (
                       <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3">
@@ -483,7 +485,7 @@ export const Dashboard: React.FC = () => {
                     )}
 
                     {/* 选项卡导航 */}
-                    <div className="flex border-b border-white/5 gap-1 overflow-x-auto">
+                    <div className={`flex border-b gap-1 overflow-x-auto ${theme === "dark" ? "border-white/5" : "border-gray-200"}`}>
                       {([
                         { id: "tools", label: `Tools`, count: tools.length, icon: <Cpu className="w-3.5 h-3.5" /> },
                         { id: "prompts", label: `Prompts`, count: prompts.length, icon: <Code2 className="w-3.5 h-3.5" /> },
@@ -567,12 +569,12 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
 }) => {
   const c = colorMap[color];
   return (
-    <div className="glass-card rounded-2xl p-5 border border-white/10 hover:border-white/15 transition-all duration-300">
+    <div className={`glass-card rounded-2xl p-5 border transition-all duration-300 ${theme === "dark" ? "border-white/10 hover:border-white/15" : "border-gray-200 hover:border-gray-300"}`}>
       <div className="flex items-start justify-between mb-3">
-        <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">{label}</p>
+        <p className={`text-[11px] font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{label}</p>
         <div className={`p-2 rounded-xl ${c.bg} ${c.text}`}>{icon}</div>
       </div>
-      <h3 className="text-3xl font-extrabold text-white leading-none">{value}</h3>
+      <h3 className={`text-3xl font-extrabold leading-none ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{value}</h3>
       {sub && <p className={`text-[11px] mt-2 ${c.text}`}>{sub}</p>}
     </div>
   );
@@ -583,7 +585,7 @@ const StatMiniCard: React.FC<{ label: string; value: number; color: keyof typeof
   return (
     <div className={`p-3 rounded-2xl border ${c.border} ${c.bg} text-center`}>
       <div className={`text-2xl font-extrabold ${c.text}`}>{value}</div>
-      <div className="text-[10px] text-gray-500 mt-0.5 font-bold uppercase tracking-wider">{label}</div>
+      <div className={`text-[10px] mt-0.5 font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{label}</div>
     </div>
   );
 };
@@ -595,14 +597,14 @@ const ArrowRightInline: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => (
-  <div className="glass-card rounded-3xl p-12 text-center border border-white/10">
+  <div className={`glass-card rounded-3xl p-12 text-center border ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
     <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
       <Server className="w-7 h-7 text-violet-400" />
     </div>
-    <h3 className="text-lg font-extrabold text-white mb-1">
+    <h3 className={`text-lg font-extrabold mb-1 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
       {hasServers ? "没有匹配的服务器" : "暂无已注册的 MCP 服务器"}
     </h3>
-    <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
+    <p className={`text-sm max-w-md mx-auto leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
       {hasServers
         ? "请尝试修改搜索关键词或清空筛选条件。"
         : "请先在后端 config.json 中配置一个或多个 MCP 服务，重启网关后刷新本页面即可看到实时状态。"}
@@ -612,27 +614,27 @@ const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => (
 
 const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty }) => {
   if (tools.length === 0) {
-    return <p className="text-xs text-gray-500 italic py-2">{empty}</p>;
+    return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {tools.map((t, idx) => (
-        <div key={idx} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-violet-500/20 transition-all duration-300">
+        <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-violet-500/20" : "bg-white border-gray-200 hover:border-violet-300"}`}>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-400 shrink-0">
                 <Cpu className="w-3.5 h-3.5" />
               </div>
-              <h4 className="font-bold text-white text-sm truncate">{toolName(t)}</h4>
+              <h4 className={`font-bold text-sm truncate ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{toolName(t)}</h4>
             </div>
           </div>
           {toolDesc(t) && (
-            <p className="text-xs text-gray-400 leading-relaxed pl-9">{toolDesc(t)}</p>
+            <p className={`text-xs leading-relaxed pl-9 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>{toolDesc(t)}</p>
           )}
           {toolSchema(t) && (
             <div className="mt-3 pl-9">
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">参数 Schema</div>
-              <pre className="text-[10px] bg-black/40 border border-white/5 p-3 rounded-xl overflow-x-auto text-gray-400 font-mono leading-relaxed max-h-32">
+              <div className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>参数 Schema</div>
+              <pre className={`text-[10px] border p-3 rounded-xl overflow-x-auto font-mono leading-relaxed max-h-32 ${theme === "dark" ? "bg-black/40 border-white/5 text-gray-400" : "bg-gray-100 border-gray-200 text-gray-700"}`}>
                 {JSON.stringify(toolSchema(t), null, 2)}
               </pre>
             </div>
@@ -645,29 +647,29 @@ const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty 
 
 const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts, empty }) => {
   if (prompts.length === 0) {
-    return <p className="text-xs text-gray-500 italic py-2">{empty}</p>;
+    return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {prompts.map((p, idx) => (
-        <div key={idx} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-500/20 transition-all duration-300">
+        <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-indigo-500/20" : "bg-white border-gray-200 hover:border-indigo-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
               <Code2 className="w-3.5 h-3.5" />
             </div>
-            <h4 className="font-bold text-white text-sm">{promptName(p)}</h4>
+            <h4 className={`font-bold text-sm ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{promptName(p)}</h4>
           </div>
           {promptDesc(p) && (
-            <p className="text-xs text-gray-400 leading-relaxed pl-9">{promptDesc(p)}</p>
+            <p className={`text-xs leading-relaxed pl-9 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>{promptDesc(p)}</p>
           )}
           {promptArgs(p).length > 0 && (
             <div className="mt-3 pl-9">
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">参数</div>
+              <div className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>参数</div>
               <div className="flex flex-wrap gap-1.5">
                 {promptArgs(p).map((arg, aidx) => {
                   const name: string = (arg as any)?.name || (typeof arg === "string" ? arg : `arg${aidx + 1}`);
                   return (
-                    <span key={aidx} className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 border border-white/5 text-gray-400 font-mono">
+                    <span key={aidx} className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${theme === "dark" ? "bg-white/5 border-white/5 text-gray-400" : "bg-gray-100 border-gray-200 text-gray-600"}`}>
                       {name}
                     </span>
                   );
@@ -683,25 +685,25 @@ const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts
 
 const ResourceList: React.FC<{ resources: MCPResource[]; empty: string }> = ({ resources, empty }) => {
   if (resources.length === 0) {
-    return <p className="text-xs text-gray-500 italic py-2">{empty}</p>;
+    return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {resources.map((r, idx) => (
-        <div key={idx} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/20 transition-all duration-300">
+        <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-emerald-500/20" : "bg-white border-gray-200 hover:border-emerald-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
               <FileText className="w-3.5 h-3.5" />
             </div>
-            <h4 className="font-bold text-white text-sm truncate">{resourceName(r)}</h4>
+            <h4 className={`font-bold text-sm truncate ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{resourceName(r)}</h4>
           </div>
           {resourceDesc(r) && (
-            <p className="text-xs text-gray-400 leading-relaxed pl-9">{resourceDesc(r)}</p>
+            <p className={`text-xs leading-relaxed pl-9 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>{resourceDesc(r)}</p>
           )}
           {resourceUri(r) && (
             <div className="mt-3 pl-9">
-              <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">URI</div>
-              <div className="text-[11px] bg-black/40 border border-white/5 px-2.5 py-1.5 rounded-lg text-emerald-300/90 font-mono truncate select-all">
+              <div className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>URI</div>
+              <div className={`text-[11px] border px-2.5 py-1.5 rounded-lg font-mono truncate select-all ${theme === "dark" ? "bg-black/40 border-white/5 text-emerald-300/90" : "bg-gray-100 border-gray-200 text-emerald-600"}`}>
                 {resourceUri(r)}
               </div>
             </div>
