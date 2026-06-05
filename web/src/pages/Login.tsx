@@ -36,11 +36,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       } else {
         setError("Token 校验失败，请重试");
       }
-    } catch (err: any) {
-      if (err.response && err.response.status === 401) {
-        setError("无效的 Token，请重新输入");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response && err.response.status === 401) {
+          setError("无效的 Token，请重新输入");
+        } else {
+          setError(err.response?.data?.message || "连接服务器失败，请确保代理服务已启动");
+        }
       } else {
-        setError(err.response?.data?.message || "连接服务器失败，请确保代理服务已启动");
+        setError("连接服务器失败，请确保代理服务已启动");
       }
     } finally {
       setLoading(false);

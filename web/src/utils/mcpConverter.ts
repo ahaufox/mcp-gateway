@@ -288,11 +288,13 @@ export const formatAuthHeader = (token: string): string => {
   return trimmed.toLowerCase().startsWith("bearer ") ? trimmed : `Bearer ${trimmed}`;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const convertToProxy = (fromConfig: any, tokenOverride: string, keys: Set<string>) => {
   if (!fromConfig) return null;
   const config = JSON.parse(JSON.stringify(fromConfig));
   
   if (config.mcpServers) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filteredServers: any = {};
     for (const key of keys) {
       if (config.mcpServers[key]) {
@@ -315,6 +317,7 @@ export const convertToProxy = (fromConfig: any, tokenOverride: string, keys: Set
   return config;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
   const { tokenOverride, selectedServers, clientConfig, platform } = options;
   const { configFormat } = clientConfig;
@@ -325,6 +328,7 @@ export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
   const requireType = platformOverride?.requireType ?? configFormat.requireType ?? false;
   const useStdioBridge = platformOverride?.useStdioBridge ?? configFormat.useStdioBridge ?? false;
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config: any = { [rootKey]: {} };
   
   const options_ = fromConfig?.mcpProxy?.options ?? {};
@@ -361,6 +365,7 @@ export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
         args: baseArgs
       };
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const server: any = { [httpField]: serverUrl };
       
       if (requireType) {

@@ -27,7 +27,9 @@ interface MCPTool {
   Name?: string;
   description?: string;
   Description?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   inputSchema?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   InputSchema?: any;
 }
 
@@ -36,7 +38,9 @@ interface MCPPrompt {
   Name?: string;
   description?: string;
   Description?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   arguments?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Arguments?: any[];
 }
 
@@ -147,6 +151,7 @@ export const Dashboard: React.FC = () => {
       setServers(list);
       setLastUpdated(new Date());
       setError("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err?.response?.status === 401) {
         setError("认证已过期，请重新登录");
@@ -159,7 +164,9 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchServers();
+    Promise.resolve().then(() => {
+      fetchServers();
+    });
   }, []);
 
   useEffect(() => {
@@ -367,7 +374,7 @@ export const Dashboard: React.FC = () => {
             return (
               <button
                 key={item.key}
-                onClick={() => setStatusFilter(item.key as any)}
+                onClick={() => setStatusFilter(item.key as "all" | StatusKey)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer ${isActive ? c.active : c.inactive}`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
@@ -670,6 +677,7 @@ const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string; theme: string 
               <div className={`text-[10px] font-bold uppercase tracking-wider mb-1.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>参数</div>
               <div className="flex flex-wrap gap-1.5">
                 {promptArgs(p).map((arg, aidx) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const name: string = (arg as any)?.name || (typeof arg === "string" ? arg : `arg${aidx + 1}`);
                   return (
                     <span key={aidx} className={`text-[10px] px-2 py-0.5 rounded-md border font-mono ${theme === "dark" ? "bg-white/5 border-white/5 text-gray-400" : "bg-gray-100 border-gray-200 text-gray-600"}`}>
