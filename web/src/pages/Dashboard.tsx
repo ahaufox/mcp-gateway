@@ -567,7 +567,6 @@ const colorMap: Record<string, { bg: string; text: string; ring: string; border:
 const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; color: keyof typeof colorMap; sub?: string }> = ({
   label, value, icon, color, sub
 }) => {
-  const { theme } = useTheme();
   const c = colorMap[color];
   return (
     <div className={`glass-card rounded-2xl p-5 border transition-all duration-300 ${theme === "dark" ? "border-white/10 hover:border-white/15" : "border-gray-200 hover:border-gray-300"}`}>
@@ -582,7 +581,6 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
 };
 
 const StatMiniCard: React.FC<{ label: string; value: number; color: keyof typeof colorMap }> = ({ label, value, color }) => {
-  const { theme } = useTheme();
   const c = colorMap[color];
   return (
     <div className={`p-3 rounded-2xl border ${c.border} ${c.bg} text-center`}>
@@ -598,33 +596,29 @@ const ArrowRightInline: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => {
-  const { theme } = useTheme();
-  return (
-    <div className={`glass-card rounded-3xl p-12 text-center border ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
-      <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
-        <Server className="w-7 h-7 text-violet-400" />
-      </div>
-      <h3 className={`text-lg font-extrabold mb-1 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-        {hasServers ? "没有匹配的服务器" : "暂无已注册的 MCP 服务器"}
-      </h3>
-      <p className={`text-sm max-w-md mx-auto leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-        {hasServers
-          ? "请尝试修改搜索关键词或清空筛选条件。"
-          : "请先在后端 config.json 中配置一个或多个 MCP 服务，重启网关后刷新本页面即可看到实时状态。"}
-      </p>
+const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => (
+  <div className={`glass-card rounded-3xl p-12 text-center border ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
+    <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
+      <Server className="w-7 h-7 text-violet-400" />
     </div>
-  );
-};
+    <h3 className={`text-lg font-extrabold mb-1 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+      {hasServers ? "没有匹配的服务器" : "暂无已注册的 MCP 服务器"}
+    </h3>
+    <p className={`text-sm max-w-md mx-auto leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+      {hasServers
+        ? "请尝试修改搜索关键词或清空筛选条件。"
+        : "请先在后端 config.json 中配置一个或多个 MCP 服务，重启网关后刷新本页面即可看到实时状态。"}
+    </p>
+  </div>
+);
 
 const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty }) => {
-  const { theme } = useTheme();
   if (tools.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {tools.map((t) => (
+      {tools.map((t, idx) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-violet-500/20" : "bg-white border-gray-200 hover:border-violet-300"}`}>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -652,13 +646,12 @@ const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty 
 };
 
 const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts, empty }) => {
-  const { theme } = useTheme();
   if (prompts.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {prompts.map((p) => (
+      {prompts.map((p, idx) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-indigo-500/20" : "bg-white border-gray-200 hover:border-indigo-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
@@ -691,13 +684,12 @@ const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts
 };
 
 const ResourceList: React.FC<{ resources: MCPResource[]; empty: string }> = ({ resources, empty }) => {
-  const { theme } = useTheme();
   if (resources.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {resources.map((r) => (
+      {resources.map((r, idx) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-emerald-500/20" : "bg-white border-gray-200 hover:border-emerald-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
