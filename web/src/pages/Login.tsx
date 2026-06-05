@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { setAuthToken } from "../utils/api";
 import axios from "axios";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
@@ -64,7 +65,7 @@ export const Converter: React.FC = () => {
   useEffect(() => {
     const detected = detectPlatform();
     if (detected !== "unknown") {
-      setSelectedPlatform(detected);
+      setTimeout(() => setSelectedPlatform(detected), 0);
     }
   }, []);
 
@@ -100,7 +101,7 @@ export const Converter: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => { setTimeout(() => loadConfig(), 0); }, [loadConfig]);
 
   // ── 转换输出 (自动响应所有输入变化) ──
 

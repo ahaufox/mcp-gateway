@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type Platform = 'windows' | 'macos' | 'linux' | 'unknown';
 
 export interface ClientPaths {

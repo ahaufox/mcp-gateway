@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
@@ -159,7 +160,7 @@ export const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchServers();
+    setTimeout(() => fetchServers(), 0);
   }, []);
 
   useEffect(() => {
