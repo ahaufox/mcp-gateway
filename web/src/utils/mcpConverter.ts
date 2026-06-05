@@ -237,7 +237,7 @@ export const CLIENTS: ClientDef[] = [
       linux: "~/.config/gemini/antigravity/mcp_config.json"
     }, 
     keywords: ["antigravity", "gemini", "google"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: true }
+    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: true }
   },
   { 
     id: "openinterpreter", 
