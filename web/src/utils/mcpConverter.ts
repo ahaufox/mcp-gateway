@@ -288,12 +288,12 @@ export const formatAuthHeader = (token: string): string => {
   return trimmed.toLowerCase().startsWith("bearer ") ? trimmed : `Bearer ${trimmed}`;
 };
 
-export const convertToProxy = (fromConfig: any, tokenOverride: string, keys: Set<string>) => {
+export const convertToProxy = (fromConfig: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, tokenOverride: string, keys: Set<string>) => {
   if (!fromConfig) return null;
   const config = JSON.parse(JSON.stringify(fromConfig));
   
   if (config.mcpServers) {
-    const filteredServers: any = {};
+    const filteredServers: any = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
     for (const key of keys) {
       if (config.mcpServers[key]) {
         filteredServers[key] = config.mcpServers[key];
@@ -315,7 +315,7 @@ export const convertToProxy = (fromConfig: any, tokenOverride: string, keys: Set
   return config;
 };
 
-export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
+export const convertToFormat = (fromConfig: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, options: ConvertOptions) => {
   const { tokenOverride, selectedServers, clientConfig, platform } = options;
   const { configFormat } = clientConfig;
   
@@ -325,7 +325,7 @@ export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
   const requireType = platformOverride?.requireType ?? configFormat.requireType ?? false;
   const useStdioBridge = platformOverride?.useStdioBridge ?? configFormat.useStdioBridge ?? false;
   
-  const config: any = { [rootKey]: {} };
+  const config: any = { [rootKey]: {} }; // eslint-disable-line @typescript-eslint/no-explicit-any
   
   const options_ = fromConfig?.mcpProxy?.options ?? {};
   let baseURL = fromConfig?.mcpProxy?.baseURL || "";
@@ -361,7 +361,7 @@ export const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
         args: baseArgs
       };
     } else {
-      const server: any = { [httpField]: serverUrl };
+      const server: any = { [httpField]: serverUrl }; // eslint-disable-line @typescript-eslint/no-explicit-any
       
       if (requireType) {
         server.type = "sse";

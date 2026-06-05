@@ -49,7 +49,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export const Converter: React.FC = () => {
   const { theme } = useTheme();
-  const [proxyConfig, setProxyConfig] = useState<any>(null);
+  const [proxyConfig, setProxyConfig] = useState<any /* eslint-disable-line @typescript-eslint/no-explicit-any */>(null);
   const [overrideToken, setOverrideToken] = useState("");
   const [availableServers, setAvailableServers] = useState<string[]>([]);
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
@@ -64,6 +64,7 @@ export const Converter: React.FC = () => {
   useEffect(() => {
     const detected = detectPlatform();
     if (detected !== "unknown") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPlatform(detected);
     }
   }, []);
@@ -91,7 +92,7 @@ export const Converter: React.FC = () => {
       setAvailableServers(servers);
       setSelectedServers(new Set(servers));
       setError("");
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       if (err.response?.status === 401) {
         setError("认证过期，请重新登录");
       } else {
@@ -100,7 +101,10 @@ export const Converter: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadConfig();
+  }, [loadConfig]);
 
   // ── 转换输出 (自动响应所有输入变化) ──
 

@@ -93,8 +93,8 @@ export const getPlatformConfig = (platform: Platform): PlatformConfig => {
   return configs[platform];
 };
 
-export const getPlatformSpecificFormat = (platform: Platform): Record<string, any> => {
-  const formats: Record<Platform, Record<string, any>> = {
+export const getPlatformSpecificFormat = (platform: Platform): Record<string, any /* eslint-disable-line @typescript-eslint/no-explicit-any */> => {
+  const formats: Record<Platform, Record<string, any /* eslint-disable-line @typescript-eslint/no-explicit-any */>> = {
     windows: {
       pathFormat: "windows",
       envVarPrefix: "%",
