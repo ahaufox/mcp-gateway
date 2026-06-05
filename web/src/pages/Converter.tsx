@@ -28,7 +28,7 @@ import {
   ChevronDown,
   MonitorSmartphone,
 } from "lucide-react";
-import { detectPlatform, getPlatformLabel, getConfigPathForPlatform, Platform, ClientPaths } from "../utils/platform";
+import { detectPlatform, getPlatformLabel, getConfigPathForPlatform, type Platform, type ClientPaths } from "../utils/platform";
 
 // ─── 客户端定义 ────────────────────────────────────────
 
@@ -338,7 +338,7 @@ export const Converter: React.FC = () => {
 
   // 点击外部关闭平台选择器
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = () => {
       if (showPlatformSelector) {
         setShowPlatformSelector(false);
       }
@@ -431,7 +431,11 @@ export const Converter: React.FC = () => {
   const toggleServer = (name: string) => {
     setSelectedServers(prev => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
       return next;
     });
   };

@@ -1,13 +1,13 @@
 # Stage 1: Build frontend
-FROM node:lts-bookworm-slim AS node-builder
+FROM node:22.14.0-bookworm-slim AS node-builder
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
-RUN npm run build
+RUN mkdir -p /mcp-proxy/internal/server/frontend/dist && npm run build
 
 # Stage 2: Build Go binary
-FROM golang:1.24.0-bookworm AS builder
+FROM golang:1.24.1-bookworm AS builder
 ENV GOPROXY=https://goproxy.cn,direct
 WORKDIR /app
 COPY mcp-proxy/go.mod mcp-proxy/go.sum ./

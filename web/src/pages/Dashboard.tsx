@@ -245,10 +245,10 @@ export const Dashboard: React.FC = () => {
 
           {/* 右侧汇总数字卡片 */}
           <div className="grid grid-cols-2 gap-3 md:w-64 shrink-0">
-            <StatMiniCard label="服务" value={totalServers} color="violet" />
-            <StatMiniCard label="已连接" value={connectedCount} color="emerald" />
-            <StatMiniCard label="异常" value={failedCount + unhealthyCount} color="rose" />
-            <StatMiniCard label="能力" value={totalTools + totalPrompts + totalResources} color="indigo" />
+            <StatMiniCard label="服务" value={totalServers} color="violet" theme={theme} />
+            <StatMiniCard label="已连接" value={connectedCount} color="emerald" theme={theme} />
+            <StatMiniCard label="异常" value={failedCount + unhealthyCount} color="rose" theme={theme} />
+            <StatMiniCard label="能力" value={totalTools + totalPrompts + totalResources} color="indigo" theme={theme} />
           </div>
         </div>
       </section>
@@ -261,6 +261,7 @@ export const Dashboard: React.FC = () => {
           icon={<Server className="w-5 h-5" />}
           color="violet"
           sub={`共 ${totalTools} 工具 / ${totalPrompts} 提示 / ${totalResources} 资源`}
+          theme={theme}
         />
         <StatCard
           label="正常连接"
@@ -268,6 +269,7 @@ export const Dashboard: React.FC = () => {
           icon={<CheckCircle2 className="w-5 h-5" />}
           color="emerald"
           sub={totalServers > 0 ? `可用率 ${Math.round((connectedCount / totalServers) * 100)}%` : "等待接入"}
+          theme={theme}
         />
         <StatCard
           label="不健康"
@@ -275,6 +277,7 @@ export const Dashboard: React.FC = () => {
           icon={<AlertCircle className="w-5 h-5" />}
           color="amber"
           sub={unhealthyCount > 0 ? "建议查看详情排查" : "一切正常"}
+          theme={theme}
         />
         <StatCard
           label="失败"
@@ -282,6 +285,7 @@ export const Dashboard: React.FC = () => {
           icon={<XCircle className="w-5 h-5" />}
           color="rose"
           sub={failedCount > 0 ? "请查看错误日志" : "无失败服务"}
+          theme={theme}
         />
       </section>
 
@@ -377,7 +381,7 @@ export const Dashboard: React.FC = () => {
 
       {/* ========== 服务器列表 ========== */}
       {filteredServers.length === 0 ? (
-        <EmptyState hasServers={servers.length > 0} />
+        <EmptyState hasServers={servers.length > 0} theme={theme} />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {filteredServers.map((server) => {
@@ -518,14 +522,13 @@ export const Dashboard: React.FC = () => {
                     {/* Tab 内容 */}
                     <div>
                       {currentTab === "tools" && (
-                        <ToolList tools={tools} empty="此服务未对外暴露任何 Tool" />
+                        <ToolList tools={tools} empty="此服务未对外暴露任何 Tool" theme={theme} />
                       )}
                       {currentTab === "prompts" && (
-                        <PromptList prompts={prompts} empty="此服务未对外暴露任何 Prompt" />
+                        <PromptList prompts={prompts} empty="此服务未对外暴露任何 Prompt" theme={theme} />
                       )}
                       {currentTab === "resources" && (
-                        <ResourceList resources={resources} empty="此服务未对外暴露任何 Resource" />
-                      )}
+                        <ResourceList resources={resources} empty="此服务未对外暴露任何 Resource" theme={theme} />)}
                     </div>
                   </div>
                 )}
@@ -564,8 +567,8 @@ const colorMap: Record<string, { bg: string; text: string; ring: string; border:
   indigo: { bg: "bg-indigo-500/15", text: "text-indigo-400", ring: "text-indigo-300", border: "border-indigo-500/20" },
 };
 
-const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; color: keyof typeof colorMap; sub?: string }> = ({
-  label, value, icon, color, sub
+const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; color: keyof typeof colorMap; sub?: string; theme: string }> = ({
+  label, value, icon, color, sub, theme
 }) => {
   const c = colorMap[color];
   return (
@@ -580,7 +583,7 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
   );
 };
 
-const StatMiniCard: React.FC<{ label: string; value: number; color: keyof typeof colorMap }> = ({ label, value, color }) => {
+const StatMiniCard: React.FC<{ label: string; value: number; color: keyof typeof colorMap; theme: string }> = ({ label, value, color, theme }) => {
   const c = colorMap[color];
   return (
     <div className={`p-3 rounded-2xl border ${c.border} ${c.bg} text-center`}>
@@ -596,7 +599,7 @@ const ArrowRightInline: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => (
+const EmptyState: React.FC<{ hasServers: boolean; theme: string }> = ({ hasServers, theme }) => (
   <div className={`glass-card rounded-3xl p-12 text-center border ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
     <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
       <Server className="w-7 h-7 text-violet-400" />
@@ -612,13 +615,13 @@ const EmptyState: React.FC<{ hasServers: boolean }> = ({ hasServers }) => (
   </div>
 );
 
-const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty }) => {
+const ToolList: React.FC<{ tools: MCPTool[]; empty: string; theme: string }> = ({ tools, empty, theme }) => {
   if (tools.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {tools.map((t, idx) => (
+      {tools.map((t) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-violet-500/20" : "bg-white border-gray-200 hover:border-violet-300"}`}>
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 min-w-0">
@@ -645,13 +648,13 @@ const ToolList: React.FC<{ tools: MCPTool[]; empty: string }> = ({ tools, empty 
   );
 };
 
-const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts, empty }) => {
+const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string; theme: string }> = ({ prompts, empty, theme }) => {
   if (prompts.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {prompts.map((p, idx) => (
+      {prompts.map((p) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-indigo-500/20" : "bg-white border-gray-200 hover:border-indigo-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
@@ -683,13 +686,13 @@ const PromptList: React.FC<{ prompts: MCPPrompt[]; empty: string }> = ({ prompts
   );
 };
 
-const ResourceList: React.FC<{ resources: MCPResource[]; empty: string }> = ({ resources, empty }) => {
+const ResourceList: React.FC<{ resources: MCPResource[]; empty: string; theme: string }> = ({ resources, empty, theme }) => {
   if (resources.length === 0) {
     return <p className={`text-xs italic py-2 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{empty}</p>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      {resources.map((r, idx) => (
+      {resources.map((r) => (
         <div className={`p-4 rounded-2xl border transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 hover:border-emerald-500/20" : "bg-white border-gray-200 hover:border-emerald-300"}`}>
           <div className="flex items-start gap-2 mb-2">
             <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
