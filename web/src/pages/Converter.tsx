@@ -25,7 +25,10 @@ import {
   Braces,
   HelpCircle,
   X,
+  ChevronDown,
+  MonitorSmartphone,
 } from "lucide-react";
+import { detectPlatform, getPlatformLabel, getConfigPathForPlatform, Platform, ClientPaths } from "../utils/platform";
 
 // ─── 客户端定义 ────────────────────────────────────────
 
@@ -37,32 +40,248 @@ interface ClientDef {
   category: "ide" | "terminal" | "assistant" | "platform" | "native";
   color: "emerald" | "violet" | "indigo" | "amber" | "rose" | "cyan" | "orange" | "teal" | "blue" | "green" | "purple" | "slate";
   fmtType: "claude" | "trae" | "proxy";
-  configPath: string;
+  configPaths: ClientPaths;
   keywords: string[]; // 模糊搜索关键词
+  // 配置格式差异
+  configFormat: {
+    rootKey: "mcpServers" | "servers";
+    httpField: "url" | "serverUrl";
+    requireType: boolean;
+  };
 }
 
 const CLIENTS: ClientDef[] = [
   // IDE / 编辑器
-  { id: "claude", name: "Claude Desktop", icon: Monitor, desc: "Anthropic 官方桌面客户端", category: "ide", color: "emerald", fmtType: "claude", configPath: "~/.config/Claude/claude_desktop_config.json", keywords: ["claude", "anthropic", "desktop"] },
-  { id: "cursor", name: "Cursor", icon: Puzzle, desc: "AI-first 代码编辑器", category: "ide", color: "indigo", fmtType: "claude", configPath: "~/.cursor/mcp.json", keywords: ["cursor", "ai editor"] },
-  { id: "windsurf", name: "Windsurf", icon: Cloud, desc: "Codeium 流式 AI IDE", category: "ide", color: "cyan", fmtType: "claude", configPath: "~/.codeium/windsurf/mcp_config.json", keywords: ["windsurf", "codeium"] },
-  { id: "trae", name: "Trae IDE", icon: Sparkles, desc: "字节跳动 AI 开发环境", category: "ide", color: "violet", fmtType: "trae", configPath: "~/.trae/mcp_config.json", keywords: ["trae", "字节跳动", "bytedance"] },
-  { id: "cline", name: "Cline", icon: Bot, desc: "VS Code 全能 AI 助手", category: "ide", color: "rose", fmtType: "claude", configPath: "~/.cline/mcp_settings.json", keywords: ["cline", "vscode extension"] },
-  { id: "roocode", name: "Roo Code", icon: Cpu, desc: "VS Code 多模型 AI 编程", category: "ide", color: "orange", fmtType: "claude", configPath: "~/.roo-code/mcp_settings.json", keywords: ["roo", "roo code", "vscode"] },
-  { id: "vscode", name: "VS Code", icon: Braces, desc: "微软编辑器 MCP 扩展", category: "ide", color: "blue", fmtType: "claude", configPath: "~/.vscode/mcp.json", keywords: ["vscode", "visual studio", "microsoft"] },
-  { id: "zed", name: "Zed Editor", icon: Layers, desc: "高性能协作编辑器", category: "ide", color: "slate", fmtType: "claude", configPath: "~/.zed/mcp.json", keywords: ["zed", "editor"] },
-  { id: "continue", name: "Continue", icon: Play, desc: "开源 AI 代码助手", category: "ide", color: "purple", fmtType: "claude", configPath: "~/.continue/config.json", keywords: ["continue", "continue.dev"] },
+  { 
+    id: "claude", 
+    name: "Claude Desktop", 
+    icon: Monitor, 
+    desc: "Anthropic 官方桌面客户端", 
+    category: "ide", 
+    color: "emerald", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Claude\\claude_desktop_config.json",
+      macos: "~/Library/Application Support/Claude/claude_desktop_config.json",
+      linux: "~/.config/Claude/claude_desktop_config.json"
+    }, 
+    keywords: ["claude", "anthropic", "desktop"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "cursor", 
+    name: "Cursor", 
+    icon: Puzzle, 
+    desc: "AI-first 代码编辑器", 
+    category: "ide", 
+    color: "indigo", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Cursor\\mcp.json",
+      macos: "~/Library/Application Support/Cursor/mcp.json",
+      linux: "~/.config/Cursor/mcp.json"
+    }, 
+    keywords: ["cursor", "ai editor"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "windsurf", 
+    name: "Windsurf", 
+    icon: Cloud, 
+    desc: "Codeium 流式 AI IDE", 
+    category: "ide", 
+    color: "cyan", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Codeium\\Windsurf\\mcp_config.json",
+      macos: "~/Library/Application Support/Codeium/Windsurf/mcp_config.json",
+      linux: "~/.codeium/windsurf/mcp_config.json"
+    }, 
+    keywords: ["windsurf", "codeium"],
+    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: false }
+  },
+  { 
+    id: "trae", 
+    name: "Trae IDE", 
+    icon: Sparkles, 
+    desc: "字节跳动 AI 开发环境", 
+    category: "ide", 
+    color: "violet", 
+    fmtType: "trae", 
+    configPaths: {
+      windows: "%APPDATA%\\Trae\\mcp_config.json",
+      macos: "~/Library/Application Support/Trae/mcp_config.json",
+      linux: "~/.trae/mcp_config.json"
+    }, 
+    keywords: ["trae", "字节跳动", "bytedance"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "cline", 
+    name: "Cline", 
+    icon: Bot, 
+    desc: "VS Code 全能 AI 助手", 
+    category: "ide", 
+    color: "rose", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\.cline\\mcp_settings.json",
+      macos: "~/.cline/mcp_settings.json",
+      linux: "~/.cline/mcp_settings.json"
+    }, 
+    keywords: ["cline", "vscode extension"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "roocode", 
+    name: "Roo Code", 
+    icon: Cpu, 
+    desc: "VS Code 多模型 AI 编程", 
+    category: "ide", 
+    color: "orange", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\.roo-code\\mcp_settings.json",
+      macos: "~/.roo-code/mcp_settings.json",
+      linux: "~/.roo-code/mcp_settings.json"
+    }, 
+    keywords: ["roo", "roo code", "vscode"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "vscode", 
+    name: "VS Code", 
+    icon: Braces, 
+    desc: "微软编辑器 MCP 扩展", 
+    category: "ide", 
+    color: "blue", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Code\\User\\mcp.json",
+      macos: "~/Library/Application Support/Code/User/mcp.json",
+      linux: "~/.config/Code/User/mcp.json"
+    }, 
+    keywords: ["vscode", "visual studio", "microsoft"],
+    configFormat: { rootKey: "servers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "zed", 
+    name: "Zed Editor", 
+    icon: Layers, 
+    desc: "高性能协作编辑器", 
+    category: "ide", 
+    color: "slate", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Zed\\mcp.json",
+      macos: "~/.zed/mcp.json",
+      linux: "~/.config/zed/mcp.json"
+    }, 
+    keywords: ["zed", "editor"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "continue", 
+    name: "Continue", 
+    icon: Play, 
+    desc: "开源 AI 代码助手", 
+    category: "ide", 
+    color: "purple", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Continue\\config.json",
+      macos: "~/.continue/config.json",
+      linux: "~/.continue/config.json"
+    }, 
+    keywords: ["continue", "continue.dev"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
 
   // 终端 / CLI
-  { id: "codex", name: "Codex CLI", icon: Terminal, desc: "OpenAI 终端编程助手", category: "terminal", color: "teal", fmtType: "claude", configPath: "~/.codex/mcp.json", keywords: ["codex", "openai", "cli"] },
-  { id: "warp", name: "Warp Terminal", icon: SquareTerminal, desc: "Rust 重写智能终端", category: "terminal", color: "amber", fmtType: "claude", configPath: "~/.warp/mcp.json", keywords: ["warp", "terminal", "rust"] },
+  { 
+    id: "codex", 
+    name: "Codex CLI", 
+    icon: Terminal, 
+    desc: "OpenAI 终端编程助手", 
+    category: "terminal", 
+    color: "teal", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%USERPROFILE%\\.codex\\mcp.json",
+      macos: "~/.codex/mcp.json",
+      linux: "~/.codex/mcp.json"
+    }, 
+    keywords: ["codex", "openai", "cli"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "warp", 
+    name: "Warp Terminal", 
+    icon: SquareTerminal, 
+    desc: "Rust 重写智能终端", 
+    category: "terminal", 
+    color: "amber", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Warp\\mcp.json",
+      macos: "~/.warp/mcp.json",
+      linux: "~/.config/warp/mcp.json"
+    }, 
+    keywords: ["warp", "terminal", "rust"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
 
   // AI 平台 / 助手
-  { id: "antigravity", name: "Antigravity", icon: Globe, desc: "Gemini 生态 AI 扩展", category: "platform", color: "indigo", fmtType: "trae", configPath: "~/.gemini/antigravity/mcp_config.json", keywords: ["antigravity", "gemini", "google"] },
-  { id: "openinterpreter", name: "Open Interpreter", icon: Zap, desc: "自然语言操控计算机", category: "assistant", color: "green", fmtType: "claude", configPath: "~/.open-interpreter/mcp.json", keywords: ["open interpreter", "interpreter"] },
+  { 
+    id: "antigravity", 
+    name: "Antigravity", 
+    icon: Globe, 
+    desc: "Gemini 生态 AI 扩展", 
+    category: "platform", 
+    color: "indigo", 
+    fmtType: "trae", 
+    configPaths: {
+      windows: "%APPDATA%\\Gemini\\Antigravity\\mcp_config.json",
+      macos: "~/.gemini/antigravity/mcp_config.json",
+      linux: "~/.config/gemini/antigravity/mcp_config.json"
+    }, 
+    keywords: ["antigravity", "gemini", "google"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "openinterpreter", 
+    name: "Open Interpreter", 
+    icon: Zap, 
+    desc: "自然语言操控计算机", 
+    category: "assistant", 
+    color: "green", 
+    fmtType: "claude", 
+    configPaths: {
+      windows: "%APPDATA%\\Open Interpreter\\mcp.json",
+      macos: "~/.open-interpreter/mcp.json",
+      linux: "~/.open-interpreter/mcp.json"
+    }, 
+    keywords: ["open interpreter", "interpreter"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
 
   // mcp-proxy 原生
-  { id: "proxy", name: "mcp-proxy", icon: Box, desc: "本网关代理原生配置", category: "native", color: "amber", fmtType: "proxy", configPath: "config.json", keywords: ["mcp-proxy", "proxy", "gateway"] },
+  { 
+    id: "proxy", 
+    name: "mcp-proxy", 
+    icon: Box, 
+    desc: "本网关代理原生配置", 
+    category: "native", 
+    color: "amber", 
+    fmtType: "proxy", 
+    configPaths: {
+      windows: "config.json",
+      macos: "config.json",
+      linux: "config.json"
+    }, 
+    keywords: ["mcp-proxy", "proxy", "gateway"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
 ];
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; ring: string; bgDark: string; borderDark: string; textDark: string }> = {
@@ -101,6 +320,28 @@ export const Converter: React.FC = () => {
   const [error, setError] = useState("");
   const [showGuide, setShowGuide] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>("macos");
+  const [showPlatformSelector, setShowPlatformSelector] = useState(false);
+
+  useEffect(() => {
+    const detected = detectPlatform();
+    if (detected !== "unknown") {
+      setSelectedPlatform(detected);
+    }
+  }, []);
+
+  // 点击外部关闭平台选择器
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showPlatformSelector) {
+        setShowPlatformSelector(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPlatformSelector]);
 
   // ── 加载配置 (在初始化时调用一次) ──
 
@@ -125,24 +366,39 @@ export const Converter: React.FC = () => {
 
   // ── 转换输出 (自动响应所有输入变化) ──
 
-  const { claudeOutput, traeOutput } = useMemo(() => {
-    if (!proxyConfig) return { claudeOutput: "", traeOutput: "" };
+  const { claudeOutput, traeOutput, formattedOutput } = useMemo(() => {
+    if (!proxyConfig) return { claudeOutput: "", traeOutput: "", formattedOutput: "" };
     const claude = convertToClaude(proxyConfig, overrideToken, selectedServers);
     const trae = convertToTrae(proxyConfig, overrideToken, selectedServers);
+    
+    // 根据选中的客户端配置格式生成正确的输出
+    const clientDef = CLIENTS.find(c => c.id === selectedClient)!;
+    const formatted = convertToFormat(proxyConfig, {
+      tokenOverride: overrideToken,
+      selectedServers,
+      clientConfig: clientDef
+    });
+    
     return {
       claudeOutput: JSON.stringify(claude, null, 2),
       traeOutput: JSON.stringify(trae, null, 2),
+      formattedOutput: JSON.stringify(formatted, null, 2),
     };
-  }, [proxyConfig, overrideToken, selectedServers]);
+  }, [proxyConfig, overrideToken, selectedServers, selectedClient]);
 
   const selectedClientDef = useMemo(() => CLIENTS.find(c => c.id === selectedClient)!, [selectedClient]);
+  
+  const currentConfigPath = useMemo(() => {
+    return getConfigPathForPlatform(selectedClientDef.configPaths, selectedPlatform);
+  }, [selectedClientDef, selectedPlatform]);
 
   const currentOutput = useMemo(() => {
     if (selectedClientDef.fmtType === "claude") return claudeOutput;
     if (selectedClientDef.fmtType === "trae") return traeOutput;
     if (selectedClientDef.fmtType === "proxy") return JSON.stringify(proxyConfig, null, 2);
-    return "";
-  }, [selectedClientDef, claudeOutput, traeOutput, proxyConfig]);
+    // 对于其他客户端，使用根据其配置格式生成的输出
+    return formattedOutput;
+  }, [selectedClientDef, claudeOutput, traeOutput, proxyConfig, formattedOutput]);
 
   // ── 模糊搜索客户端 ──
 
@@ -160,27 +416,7 @@ export const Converter: React.FC = () => {
 
   const handleCopy = (text: string, type: string) => {
     if (!text) return;
-
-    const fallbackCopy = (str: string) => {
-      const textarea = document.createElement("textarea");
-      textarea.value = str;
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand("copy");
-      } catch (e) {
-        console.error("copy failed", e);
-      }
-      document.body.removeChild(textarea);
-    };
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text);
-    } else {
-      fallbackCopy(text);
-    }
+    navigator.clipboard.writeText(text);
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2000);
   };
@@ -402,10 +638,58 @@ export const Converter: React.FC = () => {
                       {selectedClientDef.fmtType === "proxy" ? "原生格式" : selectedClientDef.fmtType === "trae" ? "Trae 格式" : "Claude 兼容格式"}
                     </span>
                   </h3>
-                  <p className={`text-xs mt-0.5 ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
-                    {selectedClientDef.fmtType === "proxy"
-                      ? "直接输出 mcp-proxy 原始配置"
-                      : `目标存放路径：${selectedClientDef.configPath}`}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className={`text-xs ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
+                      {selectedClientDef.fmtType === "proxy"
+                        ? "直接输出 mcp-proxy 原始配置"
+                        : "目标存放路径："}
+                    </p>
+                    
+                    {/* 平台选择器 */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowPlatformSelector(!showPlatformSelector)}
+                        className={`flex items-center gap-1.5 text-xs font-medium border rounded-lg px-2 py-1 cursor-pointer transition-all ${
+                          theme === "dark"
+                            ? "bg-white/5 border-white/10 text-gray-400 hover:border-violet-500/30 hover:text-violet-300"
+                            : "bg-gray-50 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600"
+                        }`}
+                      >
+                        <MonitorSmartphone className="w-3.5 h-3.5" />
+                        <span>{getPlatformLabel(selectedPlatform)}</span>
+                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showPlatformSelector ? "rotate-180" : ""}`} />
+                      </button>
+                      
+                      {/* 下拉菜单 */}
+                      {showPlatformSelector && (
+                        <div className={`absolute top-full right-0 mt-1 rounded-xl shadow-lg z-50 border min-w-[120px] ${
+                          theme === "dark"
+                            ? "bg-gray-900 border-white/10"
+                            : "bg-white border-gray-200"
+                        }`}>
+                          {(['windows', 'macos', 'linux'] as Platform[]).map((platform) => (
+                            <button
+                              key={platform}
+                              onClick={() => {
+                                setSelectedPlatform(platform);
+                                setShowPlatformSelector(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                                selectedPlatform === platform
+                                  ? (theme === "dark" ? "bg-violet-500/20 text-violet-300" : "bg-violet-50 text-violet-700")
+                                  : (theme === "dark" ? "text-gray-400 hover:bg-white/5" : "text-gray-600 hover:bg-gray-50")
+                              }`}
+                            >
+                              {getPlatformLabel(platform)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className={`text-xs mt-1 font-mono ${theme === "dark" ? "text-gray-600" : "text-gray-500"}`}>
+                    {currentConfigPath}
                   </p>
                 </div>
               </div>
@@ -440,6 +724,51 @@ export const Converter: React.FC = () => {
 };
 
 // ─── 转换逻辑 ──────────────────────────────────────────
+
+interface ConvertOptions {
+  tokenOverride: string;
+  selectedServers: Set<string>;
+  clientConfig: ClientDef;
+}
+
+const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
+  const { tokenOverride, selectedServers, clientConfig } = options;
+  const { configFormat } = clientConfig;
+  
+  // 根据客户端配置格式决定根键
+  const config: any = { [configFormat.rootKey]: {} };
+  const rootKey = configFormat.rootKey;
+  
+  const options_ = fromConfig?.mcpProxy?.options ?? {};
+  let baseURL = fromConfig?.mcpProxy?.baseURL || "";
+  const suffix = fromConfig?.mcpProxy?.type === "streamable-http" ? "mcp" : "sse";
+
+  if (!baseURL || baseURL.includes("localhost") || baseURL.includes("${")) {
+    baseURL = typeof window !== "undefined" ? window.location.origin : "";
+  }
+
+  const mcpServers = fromConfig?.mcpServers ?? {};
+  
+  for (const key of selectedServers) {
+    const serverConfig = mcpServers[key];
+    if (!serverConfig) continue;
+
+    const cleanBase = baseURL.replace(/\/+$/, "");
+    const serverUrl = `${cleanBase}/${key}/${suffix}`.replace(/\/+/g, "/").replace(":/", "://");
+
+    // 根据客户端的 httpField 决定使用 url 还是 serverUrl
+    const server: any = { [configFormat.httpField]: serverUrl };
+    
+    const token = tokenOverride || serverConfig?.options?.authTokens?.[0] || options_.authTokens?.[0];
+    if (token) {
+      server.headers = { Authorization: `Bearer ${token}` };
+    }
+    
+    config[rootKey][key] = server;
+  }
+  
+  return config;
+};
 
 const convertToClaude = (fromConfig: any, tokenOverride: string, keys: Set<string>) => {
   const claudeConfig: any = { mcpServers: {} };
