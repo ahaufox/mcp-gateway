@@ -49,6 +49,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export const Converter: React.FC = () => {
   const { theme } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [proxyConfig, setProxyConfig] = useState<any>(null);
   const [overrideToken, setOverrideToken] = useState("");
   const [availableServers, setAvailableServers] = useState<string[]>([]);
@@ -64,7 +65,9 @@ export const Converter: React.FC = () => {
   useEffect(() => {
     const detected = detectPlatform();
     if (detected !== "unknown") {
-      setSelectedPlatform(detected);
+      Promise.resolve().then(() => {
+        setSelectedPlatform(detected);
+      });
     }
   }, []);
 
@@ -91,6 +94,7 @@ export const Converter: React.FC = () => {
       setAvailableServers(servers);
       setSelectedServers(new Set(servers));
       setError("");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError("认证过期，请重新登录");
@@ -100,7 +104,11 @@ export const Converter: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      loadConfig();
+    });
+  }, [loadConfig]);
 
   // ── 转换输出 (自动响应所有输入变化) ──
 

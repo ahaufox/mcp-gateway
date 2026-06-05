@@ -93,8 +93,14 @@ export const getPlatformConfig = (platform: Platform): PlatformConfig => {
   return configs[platform];
 };
 
-export const getPlatformSpecificFormat = (platform: Platform): Record<string, any> => {
-  const formats: Record<Platform, Record<string, any>> = {
+export interface PlatformFormat {
+  pathFormat: string;
+  envVarPrefix: string;
+  envVarSuffix: string;
+}
+
+export const getPlatformSpecificFormat = (platform: Platform): PlatformFormat => {
+  const formats: Record<Platform, PlatformFormat> = {
     windows: {
       pathFormat: "windows",
       envVarPrefix: "%",
