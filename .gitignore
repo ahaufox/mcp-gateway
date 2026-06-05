@@ -49,3 +49,4 @@ __pycache__
 # Redundant docker config copies
 images/
 venv/
+mcp-proxy/internal/server/frontend/dist/
