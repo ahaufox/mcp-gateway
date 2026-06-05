@@ -42,11 +42,17 @@ interface ClientDef {
   fmtType: "claude" | "trae" | "proxy";
   configPaths: ClientPaths;
   keywords: string[]; // 模糊搜索关键词
-  // 配置格式差异
+  // 配置格式差异 - 按平台区分
   configFormat: {
     rootKey: "mcpServers" | "servers";
     httpField: "url" | "serverUrl";
     requireType: boolean;
+    // 平台特定配置覆盖
+    platformOverrides?: Partial<Record<Platform, {
+      rootKey?: "mcpServers" | "servers";
+      httpField?: "url" | "serverUrl";
+      requireType?: boolean;
+    }>>;
   };
 }
 
@@ -371,12 +377,13 @@ export const Converter: React.FC = () => {
     const claude = convertToClaude(proxyConfig, overrideToken, selectedServers);
     const trae = convertToTrae(proxyConfig, overrideToken, selectedServers);
     
-    // 根据选中的客户端配置格式生成正确的输出
+    // 根据选中的客户端配置格式和平台生成正确的输出
     const clientDef = CLIENTS.find(c => c.id === selectedClient)!;
     const formatted = convertToFormat(proxyConfig, {
       tokenOverride: overrideToken,
       selectedServers,
-      clientConfig: clientDef
+      clientConfig: clientDef,
+      platform: selectedPlatform
     });
     
     return {
@@ -729,15 +736,22 @@ interface ConvertOptions {
   tokenOverride: string;
   selectedServers: Set<string>;
   clientConfig: ClientDef;
+  platform: Platform;
 }
 
 const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
-  const { tokenOverride, selectedServers, clientConfig } = options;
+  const { tokenOverride, selectedServers, clientConfig, platform } = options;
   const { configFormat } = clientConfig;
   
-  // 根据客户端配置格式决定根键
-  const config: any = { [configFormat.rootKey]: {} };
-  const rootKey = configFormat.rootKey;
+  // 获取平台特定的配置覆盖（如果有）
+  const platformOverride = configFormat.platformOverrides?.[platform];
+  
+  // 合并基础配置和平台特定配置
+  const rootKey = platformOverride?.rootKey ?? configFormat.rootKey;
+  const httpField = platformOverride?.httpField ?? configFormat.httpField;
+  
+  // 根据最终配置格式决定根键
+  const config: any = { [rootKey]: {} };
   
   const options_ = fromConfig?.mcpProxy?.options ?? {};
   let baseURL = fromConfig?.mcpProxy?.baseURL || "";
@@ -757,7 +771,7 @@ const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
     const serverUrl = `${cleanBase}/${key}/${suffix}`.replace(/\/+/g, "/").replace(":/", "://");
 
     // 根据客户端的 httpField 决定使用 url 还是 serverUrl
-    const server: any = { [configFormat.httpField]: serverUrl };
+    const server: any = { [httpField]: serverUrl };
     
     const token = tokenOverride || serverConfig?.options?.authTokens?.[0] || options_.authTokens?.[0];
     if (token) {
