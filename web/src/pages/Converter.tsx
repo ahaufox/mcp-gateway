@@ -42,6 +42,12 @@ interface ClientDef {
   fmtType: "claude" | "trae" | "proxy";
   configPaths: ClientPaths;
   keywords: string[]; // 模糊搜索关键词
+  // 配置格式差异
+  configFormat: {
+    rootKey: "mcpServers" | "servers";
+    httpField: "url" | "serverUrl";
+    requireType: boolean;
+  };
 }
 
 const CLIENTS: ClientDef[] = [
@@ -59,7 +65,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/Library/Application Support/Claude/claude_desktop_config.json",
       linux: "~/.config/Claude/claude_desktop_config.json"
     }, 
-    keywords: ["claude", "anthropic", "desktop"] 
+    keywords: ["claude", "anthropic", "desktop"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "cursor", 
@@ -74,7 +81,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/Library/Application Support/Cursor/mcp.json",
       linux: "~/.config/Cursor/mcp.json"
     }, 
-    keywords: ["cursor", "ai editor"] 
+    keywords: ["cursor", "ai editor"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "windsurf", 
@@ -89,7 +97,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/Library/Application Support/Codeium/Windsurf/mcp_config.json",
       linux: "~/.codeium/windsurf/mcp_config.json"
     }, 
-    keywords: ["windsurf", "codeium"] 
+    keywords: ["windsurf", "codeium"],
+    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: false }
   },
   { 
     id: "trae", 
@@ -104,7 +113,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/Library/Application Support/Trae/mcp_config.json",
       linux: "~/.trae/mcp_config.json"
     }, 
-    keywords: ["trae", "字节跳动", "bytedance"] 
+    keywords: ["trae", "字节跳动", "bytedance"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "cline", 
@@ -119,7 +129,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.cline/mcp_settings.json",
       linux: "~/.cline/mcp_settings.json"
     }, 
-    keywords: ["cline", "vscode extension"] 
+    keywords: ["cline", "vscode extension"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "roocode", 
@@ -134,7 +145,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.roo-code/mcp_settings.json",
       linux: "~/.roo-code/mcp_settings.json"
     }, 
-    keywords: ["roo", "roo code", "vscode"] 
+    keywords: ["roo", "roo code", "vscode"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "vscode", 
@@ -149,7 +161,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/Library/Application Support/Code/User/mcp.json",
       linux: "~/.config/Code/User/mcp.json"
     }, 
-    keywords: ["vscode", "visual studio", "microsoft"] 
+    keywords: ["vscode", "visual studio", "microsoft"],
+    configFormat: { rootKey: "servers", httpField: "url", requireType: false }
   },
   { 
     id: "zed", 
@@ -164,7 +177,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.zed/mcp.json",
       linux: "~/.config/zed/mcp.json"
     }, 
-    keywords: ["zed", "editor"] 
+    keywords: ["zed", "editor"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "continue", 
@@ -179,7 +193,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.continue/config.json",
       linux: "~/.continue/config.json"
     }, 
-    keywords: ["continue", "continue.dev"] 
+    keywords: ["continue", "continue.dev"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
 
   // 终端 / CLI
@@ -196,7 +211,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.codex/mcp.json",
       linux: "~/.codex/mcp.json"
     }, 
-    keywords: ["codex", "openai", "cli"] 
+    keywords: ["codex", "openai", "cli"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "warp", 
@@ -211,7 +227,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.warp/mcp.json",
       linux: "~/.config/warp/mcp.json"
     }, 
-    keywords: ["warp", "terminal", "rust"] 
+    keywords: ["warp", "terminal", "rust"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
 
   // AI 平台 / 助手
@@ -228,7 +245,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.gemini/antigravity/mcp_config.json",
       linux: "~/.config/gemini/antigravity/mcp_config.json"
     }, 
-    keywords: ["antigravity", "gemini", "google"] 
+    keywords: ["antigravity", "gemini", "google"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
     id: "openinterpreter", 
@@ -243,7 +261,8 @@ const CLIENTS: ClientDef[] = [
       macos: "~/.open-interpreter/mcp.json",
       linux: "~/.open-interpreter/mcp.json"
     }, 
-    keywords: ["open interpreter", "interpreter"] 
+    keywords: ["open interpreter", "interpreter"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
 
   // mcp-proxy 原生
@@ -260,7 +279,8 @@ const CLIENTS: ClientDef[] = [
       macos: "config.json",
       linux: "config.json"
     }, 
-    keywords: ["mcp-proxy", "proxy", "gateway"] 
+    keywords: ["mcp-proxy", "proxy", "gateway"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
 ];
 
@@ -346,15 +366,25 @@ export const Converter: React.FC = () => {
 
   // ── 转换输出 (自动响应所有输入变化) ──
 
-  const { claudeOutput, traeOutput } = useMemo(() => {
-    if (!proxyConfig) return { claudeOutput: "", traeOutput: "" };
+  const { claudeOutput, traeOutput, formattedOutput } = useMemo(() => {
+    if (!proxyConfig) return { claudeOutput: "", traeOutput: "", formattedOutput: "" };
     const claude = convertToClaude(proxyConfig, overrideToken, selectedServers);
     const trae = convertToTrae(proxyConfig, overrideToken, selectedServers);
+    
+    // 根据选中的客户端配置格式生成正确的输出
+    const clientDef = CLIENTS.find(c => c.id === selectedClient)!;
+    const formatted = convertToFormat(proxyConfig, {
+      tokenOverride: overrideToken,
+      selectedServers,
+      clientConfig: clientDef
+    });
+    
     return {
       claudeOutput: JSON.stringify(claude, null, 2),
       traeOutput: JSON.stringify(trae, null, 2),
+      formattedOutput: JSON.stringify(formatted, null, 2),
     };
-  }, [proxyConfig, overrideToken, selectedServers]);
+  }, [proxyConfig, overrideToken, selectedServers, selectedClient]);
 
   const selectedClientDef = useMemo(() => CLIENTS.find(c => c.id === selectedClient)!, [selectedClient]);
   
@@ -366,8 +396,9 @@ export const Converter: React.FC = () => {
     if (selectedClientDef.fmtType === "claude") return claudeOutput;
     if (selectedClientDef.fmtType === "trae") return traeOutput;
     if (selectedClientDef.fmtType === "proxy") return JSON.stringify(proxyConfig, null, 2);
-    return "";
-  }, [selectedClientDef, claudeOutput, traeOutput, proxyConfig]);
+    // 对于其他客户端，使用根据其配置格式生成的输出
+    return formattedOutput;
+  }, [selectedClientDef, claudeOutput, traeOutput, proxyConfig, formattedOutput]);
 
   // ── 模糊搜索客户端 ──
 
@@ -693,6 +724,51 @@ export const Converter: React.FC = () => {
 };
 
 // ─── 转换逻辑 ──────────────────────────────────────────
+
+interface ConvertOptions {
+  tokenOverride: string;
+  selectedServers: Set<string>;
+  clientConfig: ClientDef;
+}
+
+const convertToFormat = (fromConfig: any, options: ConvertOptions) => {
+  const { tokenOverride, selectedServers, clientConfig } = options;
+  const { configFormat } = clientConfig;
+  
+  // 根据客户端配置格式决定根键
+  const config: any = { [configFormat.rootKey]: {} };
+  const rootKey = configFormat.rootKey;
+  
+  const options_ = fromConfig?.mcpProxy?.options ?? {};
+  let baseURL = fromConfig?.mcpProxy?.baseURL || "";
+  const suffix = fromConfig?.mcpProxy?.type === "streamable-http" ? "mcp" : "sse";
+
+  if (!baseURL || baseURL.includes("localhost") || baseURL.includes("${")) {
+    baseURL = typeof window !== "undefined" ? window.location.origin : "";
+  }
+
+  const mcpServers = fromConfig?.mcpServers ?? {};
+  
+  for (const key of selectedServers) {
+    const serverConfig = mcpServers[key];
+    if (!serverConfig) continue;
+
+    const cleanBase = baseURL.replace(/\/+$/, "");
+    const serverUrl = `${cleanBase}/${key}/${suffix}`.replace(/\/+/g, "/").replace(":/", "://");
+
+    // 根据客户端的 httpField 决定使用 url 还是 serverUrl
+    const server: any = { [configFormat.httpField]: serverUrl };
+    
+    const token = tokenOverride || serverConfig?.options?.authTokens?.[0] || options_.authTokens?.[0];
+    if (token) {
+      server.headers = { Authorization: `Bearer ${token}` };
+    }
+    
+    config[rootKey][key] = server;
+  }
+  
+  return config;
+};
 
 const convertToClaude = (fromConfig: any, tokenOverride: string, keys: Set<string>) => {
   const claudeConfig: any = { mcpServers: {} };
