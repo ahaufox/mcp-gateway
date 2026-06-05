@@ -36,7 +36,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-TARGET_DIR="${REMOTE_TARGET_DIR:-/mnt/bd757a96-8cd5-4430-aba4-bbeeb031a354/mcp-gateway}"
+TARGET_DIR="${REMOTE_TARGET_DIR:-~/mcp-gateway}"
 IMAGES=("mcp-gateway/proxy:latest" "mcp-gateway/douyin-mcp:latest" "mcp-gateway/jules-mcp-server:latest")
 
 echo -e "${BLUE}开始部署 MCP Gateway 到 ${REMOTE_TARGET}...${NC}"
@@ -44,6 +44,21 @@ echo -e "${BLUE}开始部署 MCP Gateway 到 ${REMOTE_TARGET}...${NC}"
 # 0. 建立主连接 (仅需输入一次密码)
 echo -e "${YELLOW}[0/4] 建立 SSH 控制连接 (如需密码请在此输入)...${NC}"
 ssh $SSH_OPTS -fN "$REMOTE_TARGET"
+
+# 0.1 获取远程主目录并解析 TARGET_DIR
+echo -e "${YELLOW}[0.1/4] 解析远程目标路径...${NC}"
+REMOTE_HOME=$(ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "echo \$HOME")
+if [ -z "$REMOTE_HOME" ]; then
+    echo -e "${RED}错误: 无法获取远程用户的 HOME 目录。${NC}"
+    exit 1
+fi
+
+if [[ "$TARGET_DIR" == "~/"* ]]; then
+    TARGET_DIR="${REMOTE_HOME}/${TARGET_DIR#\~/}"
+elif [[ "$TARGET_DIR" != /* ]]; then
+    TARGET_DIR="${REMOTE_HOME}/${TARGET_DIR}"
+fi
+echo -e "${BLUE}远程部署路径已解析为: ${TARGET_DIR}${NC}"
 
 # 1. 本地构建
 echo -e "${YELLOW}[1/4] 在本地构建 Docker 镜像...${NC}"
