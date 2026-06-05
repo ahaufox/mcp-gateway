@@ -9,306 +9,199 @@
 | **stdio** | ✅ 完整 | ❌ 不支持 | 子进程通信 |
 | **SSE** | ✅ 完整 | ✅ 完整 | 双向事件流 |
 | **Streamable HTTP** | ✅ 完整 | ✅ 完整 | 无状态 HTTP |
+| **WebSocket** | ✅ 独立实现 | ❌ 待开发 | 客户端已实现，待集成 |
 
-### 1.2 核心模块梳理
+### 1.2 核心模块实现状态
 
-| 模块 | 文件 | 功能 |
-|------|------|------|
-| 配置加载 | [config.go](file:///workspace/mcp-proxy/internal/config/config.go) | 配置解析、环境变量展开 |
-| 客户端管理 | [client.go](file:///workspace/mcp-proxy/internal/core/client.go) | MCP 客户端连接、重连、工具聚合 |
-| 服务端管理 | [mcp_server.go](file:///workspace/mcp-proxy/internal/server/mcp_server.go) | SSE/HTTP 服务暴露 |
-| HTTP 服务 | [server.go](file:///workspace/mcp-proxy/internal/server/server.go) | 路由、Dashboard |
+| 模块 | 文件 | 实现状态 | 集成状态 |
+|------|------|----------|----------|
+| 配置加载 | `internal/config/config.go` | ✅ 完成 | ✅ 已集成 |
+| 客户端管理 | `internal/core/client.go` | ✅ 完成 | ✅ 已集成 |
+| 服务端管理 | `internal/server/mcp_server.go` | ✅ 完成 | ✅ 已集成 |
+| HTTP 服务 | `internal/server/server.go` | ✅ 完成 | ✅ 已集成 |
+| 熔断器 | `internal/circuitbreaker/breaker.go` | ✅ 完成 | ✅ 已集成 |
+| 错误体系 | `internal/errors/` | ✅ 完成 | ✅ 已集成 |
+| 超时配置 | `internal/config/config.go` | ✅ 完成 | ✅ 已集成 |
+| WebSocket 客户端 | `internal/transport/websocket_client.go` | ✅ 完成 | ⏳ 待集成 |
+| 传输层抽象 | `internal/transport/interface.go` | ✅ 完成 | ⏳ 待集成 |
+| 工具重命名 | `internal/tools/rewrite.go` | ✅ 完成 | ⏳ 待集成 |
+| 工具缓存 | `internal/cache/toolcache.go` | ✅ 完成 | ⏳ 待集成 |
+| 批量调用 | `internal/batch/batch.go` | ✅ 完成 | ⏳ 待集成 |
+| 钩子机制 | `internal/hook/hook.go` | ✅ 完成 | ⏳ 待集成 |
+| 重试中间件 | `internal/retry/middleware.go` | ✅ 完成 | ⏳ 待集成 |
+| 进程管理 | `internal/process/manager.go` | ✅ 完成 | ⏳ 待集成 |
+| 限流器 | `internal/ratelimit/` | ❌ 未实现 | - |
+| 请求队列 | `internal/queue/` | ❌ 未实现 | - |
+| 连接池 | `internal/pool/` | ❌ 未实现 | - |
+| 协议桥接 | `internal/bridge/` | ❌ 未实现 | - |
 
 ### 1.3 当前问题与痛点
 
 #### 协议相关
-1. **WebSocket 协议缺失** - 不支持 WebSocket 作为传输协议
-2. **协议转换能力有限** - 无法在不同协议间灵活转换（如 stdio → WebSocket）
-3. **缺乏协议适配层** - 新增协议需要修改核心代码
-4. **SSE 连接稳定性** - 长连接断开后重连机制需要优化
+1. **WebSocket 客户端未接入** — 独立实现但核心流程仍回退 SSE
+2. **WebSocket 服务端缺失** — 不支持以 WebSocket 方式暴露网关
+3. **协议桥接能力为空** — 无法在不同协议间灵活转换
+4. **SSE 连接稳定性** — 长连接断开后重连机制需要优化
 
-#### 稳定性相关
-1. **错误隔离不足** - 单个服务异常可能影响其他服务
-2. **超时配置单一** - 不同服务/工具的超时策略无法定制
-3. **请求排队处理** - 高并发下缺乏请求队列和限流
-4. **资源泄漏风险** - stdio 进程管理存在资源泄漏隐患
-5. **大型消息处理** - 大数据量的请求/响应缺乏流式处理优化
+#### 集成相关
+1. **模块孤岛** — 7 个功能模块代码完整但未接入核心流程
+2. **工具重命名未生效** — `tools/rewrite.go` 未在工具注册/聚合流程中调用
+3. **缓存未生效** — `cache/toolcache.go` 未集成到 CallTool 调用链
+4. **批量调用无路由** — `batch/batch.go` 未挂载到 HTTP API
+5. **重试未接入** — `retry/middleware.go` 未在客户端调用链中执行
+6. **钩子未串联** — `hook/hook.go` 未注入到请求/响应处理管道
+7. **进程管理未替换** — `process/manager.go` 未替代 mcp-go 原生进程管理
 
 #### 功能体验相关
-1. **工具聚合冲突** - 多个服务同名工具无重命名机制
-2. **批量工具调用** - 缺乏批量调用能力
-3. **工具调用缓存** - 重复调用相同工具无法缓存结果
-4. **请求/响应转换** - 工具参数和结果无法灵活转换
+1. **高并发保障缺失** — 缺乏限流、请求队列机制
+2. **连接管理粗放** — 缺乏连接池复用
+3. **资源监控不足** — 缺乏完善的 metrics 和 tracing
 
 ---
 
-## 2. 协议支持扩展
+## 2. 已完成基础能力 (无需重复开发)
 
-### 2.1 新增 WebSocket 协议支持
+以下能力已实现完整代码，核心工作转为**集成打通**而非重新开发。
 
-#### 设计目标
-- 支持 WebSocket 作为客户端传输协议
-- 支持通过 WebSocket 暴露网关服务
-- 保持与现有 SSE/HTTP 一致的使用体验
+### 2.1 传输层抽象
 
-#### 技术实现
+已定义统一 `Transport` 接口及工厂模式：
 
 ```go
-package protocol
-
-// WebSocket 客户端配置
-type WebsocketMCPClientConfig struct {
-    URL               string            `json:"url"`
-    Headers           map[string]string `json:"headers"`
-    HandshakeTimeout  time.Duration     `json:"handshakeTimeout"`
-    ReadBufferSize    int               `json:"readBufferSize"`
-    WriteBufferSize   int               `json:"writeBufferSize"`
-    EnableCompression bool              `json:"enableCompression"`
-}
-
-// WebSocket 服务端配置
-type WebsocketMCPServerConfig struct {
-    Path              string        `json:"path"`
-    ReadBufferSize    int           `json:"readBufferSize"`
-    WriteBufferSize   int           `json:"writeBufferSize"`
-    HandshakeTimeout  time.Duration `json:"handshakeTimeout"`
-    EnableCompression bool          `json:"enableCompression"`
-}
-```
-
-#### 配置示例
-```json
-{
-  "mcpServers": {
-    "websocket-service": {
-      "transportType": "websocket",
-      "url": "ws://localhost:8080/mcp",
-      "headers": {
-        "Authorization": "Bearer token"
-      },
-      "options": {
-        "handshakeTimeout": "10s",
-        "enableCompression": true
-      }
-    }
-  }
-}
-```
-
-### 2.2 协议转换桥接
-
-#### 桥接模式
-支持任意协议间的双向转换：
-- stdio ↔ SSE
-- stdio ↔ WebSocket
-- SSE ↔ WebSocket
-- Streamable HTTP ↔ 任意协议
-
-#### 桥接实现
-```go
-package bridge
-
-// ProtocolBridge 协议桥接器
-type ProtocolBridge struct {
-    source ProtocolAdapter
-    target ProtocolAdapter
-}
-
-type ProtocolAdapter interface {
-    Start(ctx context.Context) error
-    Read(ctx context.Context) (*mcp.JSONRPCMessage, error)
-    Write(ctx context.Context, msg *mcp.JSONRPCMessage) error
-    Close() error
-}
-
-func (b *ProtocolBridge) Run(ctx context.Context) error {
-    // 双向转发消息
-    go b.forward(ctx, b.source, b.target)
-    go b.forward(ctx, b.target, b.source)
-    <-ctx.Done()
-    return nil
-}
-```
-
-### 2.3 统一协议适配层
-
-#### 抽象接口设计
-```go
-package transport
-
-// Transport 统一传输接口
+// transport/interface.go
 type Transport interface {
-    // 初始化连接
     Connect(ctx context.Context) error
-    
-    // 发送消息
     Send(ctx context.Context, msg *mcp.JSONRPCMessage) error
-    
-    // 接收消息
     Receive(ctx context.Context) (*mcp.JSONRPCMessage, error)
-    
-    // 健康检查
     Ping(ctx context.Context) error
-    
-    // 关闭连接
     Close() error
-    
-    // 获取状态
     Status() TransportStatus
 }
 
-// TransportFactory 传输工厂
 type TransportFactory interface {
     Create(config any) (Transport, error)
     Supports(transportType string) bool
+    Name() string
 }
 ```
 
-### 2.4 gRPC 协议支持（可选扩展）
+**待完成**: 将现有 Stdio/SSE/HTTP 客户端迁移至 Transport 接口。
 
-```protobuf
-syntax = "proto3";
+### 2.2 WebSocket 客户端
 
-package mcp.gateway;
+`internal/transport/websocket_client.go` 已实现完整 WebSocket 客户端：
+- 连接建立（可配置 Dialer、Headers、超时）
+- 读写循环（goroutine + channel）
+- 心跳检测（PingMessage 定期发送）
+- 自动重连（指数退避）
+- WebSocketFactory 工厂
 
-service MCPGateway {
-  rpc Initialize(InitializeRequest) returns (InitializeResponse);
-  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
-  rpc CallTool(stream CallToolRequest) returns (stream CallToolResponse);
-  rpc ListResources(ListResourcesRequest) returns (ListResourcesResponse);
-  rpc ReadResource(ReadResourceRequest) returns (ReadResourceResponse);
-  rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResponse);
-  rpc GetPrompt(GetPromptRequest) returns (GetPromptResponse);
-}
-```
+**待完成**: 在 `core/client.go` 中注册 WebSocket 路由，替代现有的 SSE 回退逻辑。
+
+### 2.3 熔断器
+
+`internal/circuitbreaker/breaker.go` 已实现完整三态熔断器（Closed/Open/HalfOpen），已在 `core/client.go` 中集成：
+- `Allow()` / `RecordResult()` / `Execute()`
+- 并发安全（RWMutex）
+- 可配置（MaxFailures / ResetTimeout / HalfOpenMax）
+
+### 2.4 错误体系
+
+`internal/errors/` 已实现完整错误体系，已在 `client.go` 中广泛使用：
+- 10 种标准错误码
+- `MCPError` 结构体 + `Wrap`/`New` 工厂函数
+- `WithService`/`WithTool`/`WithCause` 链式构建
+
+### 2.5 超时与重试
+
+- 超时配置: `OptionsV2` 中 `CallTimeout`/`InitializeTimeout`/`ListToolsTimeout` 已定义，`client.go` 已应用
+- 重试中间件: `internal/retry/middleware.go` 已实现（指数退避 + 随机抖动 + 可重试错误码匹配）
+
+**待完成**: 将重试中间件接入 `client.go` 的工具调用链路。
+
+### 2.6 工具重命名
+
+`internal/tools/rewrite.go` 已实现完整工具名重写机制：
+- 精确重命名（map 映射）
+- 前缀添加
+- 命名空间添加
+- 配置校验（自引用/循环引用检测）
+- 配置合并
+
+**待完成**: 在 Client 初始化工具列表时调用 `RewriteTools()`。
+
+### 2.7 工具调用缓存
+
+`internal/cache/toolcache.go` 已实现完整缓存机制：
+- LRU 淘汰
+- TTL 过期
+- 缓存白名单（CacheableTools）
+- 命中率统计
+- 并发安全
+
+**待完成**: 在 Client.CallTool 流程中插入缓存查询/写入逻辑。
+
+### 2.8 批量调用
+
+`internal/batch/batch.go` 已实现：
+- 顺序执行
+- 并行执行（goroutine + WaitGroup）
+- 请求校验
+- Context 取消传播
+
+**待完成**: 挂载到 HTTP API 路由。
+
+### 2.9 钩子机制
+
+`internal/hook/hook.go` 已实现基础钩子链：
+- RequestHook / ResponseHook 函数类型
+- Chain 链式执行
+- 错误传递
+
+**待完成**: 注册到服务端请求处理管道；实现内置具体钩子（参数注入、结果转换等）。
+
+### 2.10 进程管理
+
+`internal/process/manager.go` 已实现：
+- 进程启动/监控/自动重启
+- 优雅关闭
+- 事件系统（Start/Stop/Restart/Error）
+
+**待完成**: 替换 `client.go` 中 direct stdio 进程创建逻辑。
 
 ---
 
-## 3. 稳定性优化
+## 3. 待开发能力
 
-### 3.1 服务隔离与熔断
+### 3.1 限流器
 
-#### 熔断器设计
+#### 设计目标
+- 基于令牌桶算法
+- 支持服务级和方法级限流
+- 与熔断器联动
+
+#### 实现方案
+
 ```go
-package circuitbreaker
-
-type State int
-
-const (
-    StateClosed State = iota   // 正常
-    StateOpen                  // 熔断
-    StateHalfOpen              // 半开
-)
-
-type CircuitBreaker struct {
-    name           string
-    state          State
-    failureCount   int
-    successCount   int
-    lastFailure    time.Time
-    config         Config
-    
-    mu             sync.RWMutex
-}
-
-type Config struct {
-    MaxFailures    int           // 最大失败次数
-    ResetTimeout   time.Duration // 熔断重置时间
-    HalfOpenMax    int           // 半开状态最大请求数
-    Timeout        time.Duration // 请求超时
-}
-
-func (cb *CircuitBreaker) Execute(fn func() error) error {
-    if !cb.Allow() {
-        return ErrCircuitOpen
-    }
-    
-    err := fn()
-    cb.RecordResult(err == nil)
-    return err
-}
-```
-
-#### 集成到客户端
-```go
-// 在 core/client.go 中集成熔断器
-type Client struct {
-    // ... 现有字段
-    circuitBreaker *circuitbreaker.CircuitBreaker
-}
-
-func (c *Client) CallTool(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-    return c.circuitBreaker.Execute(func() error {
-        return c.client.CallTool(ctx, req)
-    })
-}
-```
-
-### 3.2 超时与重试策略
-
-#### 分级超时配置
-```go
-// config.go 扩展
-type OptionsV2 struct {
-    // ... 现有字段
-    
-    // 超时配置
-    CallTimeout         time.Duration `json:"callTimeout,omitempty"`
-    InitializeTimeout   time.Duration `json:"initializeTimeout,omitempty"`
-    ListToolsTimeout    time.Duration `json:"listToolsTimeout,omitempty"`
-    
-    // 重试配置
-    MaxRetries          int           `json:"maxRetries,omitempty"`
-    RetryDelay          time.Duration `json:"retryDelay,omitempty"`
-    RetryBackoff        float64       `json:"retryBackoff,omitempty"` // 退避因子
-    RetryableErrors     []string      `json:"retryableErrors,omitempty"`
-    
-    // 限流配置
-    RateLimit           float64       `json:"rateLimit,omitempty"` // 每秒请求数
-    RateLimitBurst      int           `json:"rateLimitBurst,omitempty"`
-}
-```
-
-#### 重试中间件
-```go
-package retry
-
-func WithRetry(maxRetries int, delay time.Duration, backoff float64, fn func() error) error {
-    var lastErr error
-    for i := 0; i <= maxRetries; i++ {
-        err := fn()
-        if err == nil {
-            return nil
-        }
-        lastErr = err
-        
-        if i == maxRetries {
-            break
-        }
-        
-        select {
-        case <-time.After(calculateDelay(delay, backoff, i)):
-        }
-    }
-    return lastErr
-}
-```
-
-### 3.3 请求队列与限流
-
-#### 令牌桶限流
-```go
+// internal/ratelimit/limiter.go (新增)
 package ratelimit
 
 import "golang.org/x/time/rate"
+
+type Config struct {
+    Enabled    bool    `json:"enabled"`
+    Rate       float64 `json:"rate"`       // 每秒令牌数
+    Burst      int     `json:"burst"`      // 突发大小
+    PerMethod  bool    `json:"perMethod"`  // 是否按方法隔离
+}
 
 type Limiter struct {
     limiter *rate.Limiter
 }
 
-func NewLimiter(r rate.Limit, b int) *Limiter {
+func NewLimiter(cfg Config) *Limiter {
     return &Limiter{
-        limiter: rate.NewLimiter(r, b),
+        limiter: rate.NewLimiter(rate.Limit(cfg.Rate), cfg.Burst),
     }
 }
 
@@ -317,423 +210,317 @@ func (l *Limiter) Wait(ctx context.Context) error {
 }
 ```
 
-#### 请求队列
+### 3.2 请求队列
+
+#### 设计目标
+- 缓冲高峰请求
+- 支持优先级
+- 背压保护
+
+#### 实现方案
+
 ```go
+// internal/queue/queue.go (新增)
 package queue
 
 type Request struct {
     ctx      context.Context
     fn       func() error
+    priority int
     resultCh chan error
 }
 
-type RequestQueue struct {
-    queue     chan *Request
-    workers   int
-    wg        sync.WaitGroup
+type Queue struct {
+    queues   []chan *Request  // 多级优先级队列
+    workers  int
+    wg       sync.WaitGroup
 }
 
-func NewRequestQueue(queueSize, workers int) *RequestQueue {
-    q := &RequestQueue{
-        queue:   make(chan *Request, queueSize),
+func NewQueue(depth, workers, levels int) *Queue {
+    q := &Queue{
+        queues:  make([]chan *Request, levels),
         workers: workers,
+    }
+    for i := range q.queues {
+        q.queues[i] = make(chan *Request, depth)
     }
     q.start()
     return q
 }
-
-func (q *RequestQueue) Submit(ctx context.Context, fn func() error) error {
-    req := &Request{
-        ctx:      ctx,
-        fn:       fn,
-        resultCh: make(chan error, 1),
-    }
-    
-    select {
-    case q.queue <- req:
-    case <-ctx.Done():
-        return ctx.Err()
-    }
-    
-    select {
-    case err := <-req.resultCh:
-        return err
-    case <-ctx.Done():
-        return ctx.Err()
-    }
-}
 ```
 
-### 3.4 资源管理优化
+### 3.3 连接池
 
-#### stdio 进程守护
+#### 设计目标
+- 复用长连接（SSE/WebSocket）
+- 减少握手开销
+- 自动健康检查
+
+#### 实现方案
+
 ```go
-package process
-
-type ManagedProcess struct {
-    cmd       *exec.Cmd
-    stdout    io.ReadCloser
-    stderr    io.ReadCloser
-    stdin     io.WriteCloser
-    
-    restart   chan struct{}
-    stop      chan struct{}
-    mu        sync.Mutex
-}
-
-func (p *ManagedProcess) Start() error {
-    // 启动进程
-    // 监控进程状态
-    // 异常时自动重启
-}
-
-func (p *ManagedProcess) monitor() {
-    for {
-        select {
-        case <-p.stop:
-            return
-        case <-p.restart:
-            p.restartProcess()
-        }
-    }
-}
-```
-
-#### 连接池管理
-```go
+// internal/pool/pool.go (新增)
 package pool
 
-type ConnectionPool struct {
-    pool      chan Transport
-    factory   func() (Transport, error)
-    maxIdle   int
-    maxActive int
-    
-    mu        sync.Mutex
-    active    int
+type Pool struct {
+    mu       sync.Mutex
+    idle     []*Conn
+    active   int
+    maxIdle  int
+    maxOpen  int
+    factory  func() (*Conn, error)
+    closeFn  func(*Conn)
 }
 
-func (p *ConnectionPool) Get(ctx context.Context) (Transport, error) {
-    // 获取连接或创建新连接
-}
-
-func (p *ConnectionPool) Put(conn Transport) {
-    // 归还连接或关闭
+func (p *Pool) Get(ctx context.Context) (*Conn, error) {
+    p.mu.Lock()
+    if n := len(p.idle); n > 0 {
+        c := p.idle[n-1]
+        p.idle = p.idle[:n-1]
+        p.active++
+        p.mu.Unlock()
+        return c, nil
+    }
+    p.mu.Unlock()
+    return p.create(ctx)
 }
 ```
 
-### 3.5 错误处理增强
+### 3.4 协议桥接
 
-#### 错误分类与包装
+#### 设计目标
+- 任意协议间双向转换
+- 零拷贝消息转发
+- 健壮的错误传递
+
+#### 实现方案
+
 ```go
-package errors
+// internal/bridge/bridge.go (新增)
+package bridge
 
-type ErrorCode string
-
-const (
-    ErrCodeTimeout        ErrorCode = "timeout"
-    ErrCodeConnection     ErrorCode = "connection"
-    ErrCodeProtocol       ErrorCode = "protocol"
-    ErrCodeServer         ErrorCode = "server"
-    ErrCodeToolNotFound   ErrorCode = "tool_not_found"
-    ErrCodeInvalidRequest ErrorCode = "invalid_request"
-)
-
-type MCPError struct {
-    Code    ErrorCode `json:"code"`
-    Message string    `json:"message"`
-    Service string    `json:"service,omitempty"`
-    Tool    string    `json:"tool,omitempty"`
-    Cause   error     `json:"-"`
+type Adapter interface {
+    Start(ctx context.Context) error
+    Read(ctx context.Context) (*mcp.JSONRPCMessage, error)
+    Write(ctx context.Context, msg *mcp.JSONRPCMessage) error
+    Close() error
 }
 
-func (e *MCPError) Error() string {
-    return fmt.Sprintf("[%s] %s (service=%s, tool=%s)", e.Code, e.Message, e.Service, e.Tool)
+type Bridge struct {
+    source Adapter
+    target Adapter
+}
+
+func (b *Bridge) Run(ctx context.Context) error {
+    eg, ctx := errgroup.WithContext(ctx)
+    eg.Go(func() error { return b.forward(ctx, b.source, b.target) })
+    eg.Go(func() error { return b.forward(ctx, b.target, b.source) })
+    return eg.Wait()
+}
+```
+
+### 3.5 WebSocket 服务端
+
+复用已有 WebSocket 客户端的基础设施，在服务端增加 WebSocket 升级端点：
+
+```go
+// internal/server/websocket_server.go (新增)
+func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+    upgrader := websocket.Upgrader{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+    }
+    conn, err := upgrader.Upgrade(w, r, nil)
+    // 创建 WebSocketTransport 并接入 MCP 消息循环
 }
 ```
 
 ---
 
-## 4. 功能增强
+## 4. 模块集成计划
 
-### 4.1 工具重命名与命名空间
+核心工作：将 7 个独立模块接入核心流程。
 
-#### 配置示例
-```json
-{
-  "mcpServers": {
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "options": {
-        "toolNamespace": "github",
-        "toolPrefix": "gh_",
-        "toolRename": {
-          "create_issue": "create_github_issue",
-          "search_repos": "search_github_repos"
-        }
-      }
-    }
-  }
-}
+### 4.1 集成依赖关系
+
+```
+集成顺序 (按依赖):
+1. transport/interface.go    ← 无依赖，基础设施
+2. process/manager.go        ← 无依赖，基础设施
+3. cache/toolcache.go        ← 无依赖，基础设施
+4. tools/rewrite.go          ← 依赖 transport（工具列表来源）
+5. hook/hook.go              ← 依赖 transport/tools 等
+6. retry/middleware.go       ← 依赖 errors
+7. batch/batch.go            ← 依赖 transport + hook
+8. transport/websocket_client.go ← 依赖 transport/interface
 ```
 
-#### 实现代码
-```go
-type ToolRewriteConfig struct {
-    Namespace string            `json:"namespace,omitempty"`
-    Prefix    string            `json:"prefix,omitempty"`
-    Rename    map[string]string `json:"rename,omitempty"`
-}
+### 4.2 集成点详述
 
-func rewriteToolName(original string, config *ToolRewriteConfig) string {
-    if config == nil {
-        return original
-    }
-    
-    // 先检查精确重命名
-    if newName, ok := config.Rename[original]; ok {
-        return newName
-    }
-    
-    // 添加前缀
-    name := original
-    if config.Prefix != "" {
-        name = config.Prefix + name
-    }
-    
-    // 添加命名空间
-    if config.Namespace != "" {
-        name = config.Namespace + "." + name
-    }
-    
-    return name
-}
-```
+#### 集成点 1: transport 适配器迁移
 
-### 4.2 工具调用缓存
+| 项目 | 内容 |
+|------|------|
+| **任务** | 将 core/client.go 中的 Stdio/SSE/HTTP 客户端迁移到 Transport 接口 |
+| **改动文件** | `internal/core/client.go`, `internal/transport/stdio.go`(新增), `internal/transport/sse.go`(新增), `internal/transport/http.go`(新增) |
+| **工作量** | 2-3 天 |
+| **说明** | 现有 client.go 直接使用 mcp-go SDK 的原生客户端，需包装适配 |
 
-#### 缓存配置
-```go
-type CacheConfig struct {
-    Enabled      bool          `json:"enabled"`
-    TTL          time.Duration `json:"ttl"`
-    MaxSize      int           `json:"maxSize"`
-    CacheableTools []string    `json:"cacheableTools,omitempty"`
-}
-```
+#### 集成点 2: WebSocket 路由注册
 
-#### 缓存实现
-```go
-package cache
+| 项目 | 内容 |
+|------|------|
+| **任务** | 在 client.go 中注册 WebSocket 传输类型，替代 SSE 回退 |
+| **改动文件** | `internal/core/client.go`, `internal/config/config.go` |
+| **工作量** | 1 天 |
+| **说明** | 已有完整 WebSocket 客户端，只需在 ParseMCPClientConfigV2 中正确路由 |
 
-import "github.com/hashicorp/golang-lru/v2"
+#### 集成点 3: 工具重命名串联
 
-type ToolCallCache struct {
-    cache *lru.Cache[string, cacheEntry]
-    ttl   time.Duration
-}
+| 项目 | 内容 |
+|------|------|
+| **任务** | 在 addToolsToServer / ListTools 流程中调用 RewriteTools |
+| **改动文件** | `internal/core/client.go` |
+| **工作量** | 0.5 天 |
+| **说明** | 调用点明确，需确保反向映射（调用时还原原始名） |
 
-type cacheEntry struct {
-    result    *mcp.CallToolResult
-    timestamp time.Time
-}
+#### 集成点 4: 缓存集成
 
-func (c *ToolCallCache) Get(service, tool string, args map[string]any) (*mcp.CallToolResult, bool) {
-    key := c.buildKey(service, tool, args)
-    entry, ok := c.cache.Get(key)
-    if !ok {
-        return nil, false
-    }
-    
-    if time.Since(entry.timestamp) > c.ttl {
-        c.cache.Remove(key)
-        return nil, false
-    }
-    
-    return entry.result, true
-}
+| 项目 | 内容 |
+|------|------|
+| **任务** | 在 CallTool 中插入缓存查询/写入 |
+| **改动文件** | `internal/core/client.go` |
+| **工作量** | 0.5 天 |
+| **说明** | Get 命中直接返回，Set 在成功响应后写入 |
 
-func (c *ToolCallCache) Set(service, tool string, args map[string]any, result *mcp.CallToolResult) {
-    key := c.buildKey(service, tool, args)
-    c.cache.Add(key, cacheEntry{
-        result:    result,
-        timestamp: time.Now(),
-    })
-}
-```
+#### 集成点 5: 重试串联
 
-### 4.3 批量工具调用
+| 项目 | 内容 |
+|------|------|
+| **任务** | 在 createWrappedCallTool 中应用重试中间件 |
+| **改动文件** | `internal/core/client.go` |
+| **工作量** | 0.5 天 |
+| **说明** | 熔断器已在调用链中，在熔断之后包装重试 |
 
-#### 批量调用 API
-```go
-type BatchCallRequest struct {
-    Calls []struct {
-        Service string         `json:"service"`
-        Tool    string         `json:"tool"`
-        Args    map[string]any `json:"arguments"`
-    } `json:"calls"`
-    Parallel bool `json:"parallel,omitempty"`
-}
+#### 集成点 6: 钩子注入
 
-type BatchCallResponse struct {
-    Results []struct {
-        Success bool                   `json:"success"`
-        Result  *mcp.CallToolResult    `json:"result,omitempty"`
-        Error   string                 `json:"error,omitempty"`
-    } `json:"results"`
-}
-```
+| 项目 | 内容 |
+|------|------|
+| **任务** | 在服务端请求处理管道中注册钩子链 |
+| **改动文件** | `internal/server/server.go`, `internal/server/mcp_server.go` |
+| **工作量** | 1 天 |
+| **说明** | 先实现空链，后续通过配置注入具体钩子 |
 
-#### 批量调用实现
-```go
-func (s *Server) BatchCallTools(ctx context.Context, req BatchCallRequest) (*BatchCallResponse, error) {
-    resp := &BatchCallResponse{
-        Results: make([]struct {
-            Success bool
-            Result  *mcp.CallToolResult
-            Error   string
-        }, len(req.Calls)),
-    }
-    
-    if req.Parallel {
-        // 并行执行
-        var wg sync.WaitGroup
-        for i, call := range req.Calls {
-            wg.Add(1)
-            go func(idx int, c struct{ Service, Tool string; Args map[string]any }) {
-                defer wg.Done()
-                result, err := s.callSingleTool(ctx, c.Service, c.Tool, c.Args)
-                if err != nil {
-                    resp.Results[idx].Error = err.Error()
-                } else {
-                    resp.Results[idx].Success = true
-                    resp.Results[idx].Result = result
-                }
-            }(i, call)
-        }
-        wg.Wait()
-    } else {
-        // 串行执行
-        for i, call := range req.Calls {
-            result, err := s.callSingleTool(ctx, call.Service, call.Tool, call.Args)
-            if err != nil {
-                resp.Results[i].Error = err.Error()
-            } else {
-                resp.Results[i].Success = true
-                resp.Results[i].Result = result
-            }
-        }
-    }
-    
-    return resp, nil
-}
-```
+#### 集成点 7: 批量调用 API
 
-### 4.4 请求/响应转换钩子
+| 项目 | 内容 |
+|------|------|
+| **任务** | 将 batch.Executor 挂载到 HTTP 路由 |
+| **改动文件** | `internal/server/server.go` |
+| **工作量** | 0.5 天 |
 
-#### 转换钩子接口
-```go
-package hook
+#### 集成点 8: 进程管理器替换
 
-type ToolCallHook interface {
-    BeforeCall(ctx context.Context, service, tool string, args map[string]any) (map[string]any, error)
-    AfterCall(ctx context.Context, service, tool string, result *mcp.CallToolResult, err error) (*mcp.CallToolResult, error)
-}
-
-type PromptHook interface {
-    BeforeGetPrompt(ctx context.Context, service, prompt string, args map[string]any) (map[string]any, error)
-    AfterGetPrompt(ctx context.Context, service, prompt string, result *mcp.GetPromptResult, err error) (*mcp.GetPromptResult, error)
-}
-```
-
-#### 配置示例
-```json
-{
-  "mcpServers": {
-    "my-service": {
-      "command": "my-server",
-      "options": {
-        "hooks": {
-          "toolCall": {
-            "before": [
-              {
-                "type": "add_default_args",
-                "config": {
-                  "defaults": {
-                    "api_version": "v2"
-                  }
-                }
-              }
-            ],
-            "after": [
-              {
-                "type": "transform_result",
-                "config": {
-                  "template": "{ \"data\": {{.content}} }"
-                }
-              }
-            ]
-          }
-        }
-      }
-    }
-  }
-}
-```
+| 项目 | 内容 |
+|------|------|
+| **任务** | 用 process.Manager 替代 mcp-go 原生进程启动 |
+| **改动文件** | `internal/core/client.go` |
+| **工作量** | 1-2 天 |
+| **说明** | 需保持与现有 StdioMCPClient 接口兼容 |
 
 ---
 
 ## 5. 分阶段实施计划
 
-### 阶段一：稳定性基础（2-3 周）
+### 阶段一：模块集成打通（2-3 周）
 
-**目标**：提升核心稳定性，建立错误处理和熔断机制
+**目标**：将已实现的独立模块接入核心流程，释放既有开发成果。
 
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 分级超时配置 | P0 | 超时配置选项 + 应用 |
-| 熔断器实现 | P0 | CircuitBreaker + 集成 |
-| 错误分类与包装 | P0 | MCPError + 错误定义 |
-| stdio 进程管理优化 | P1 | ManagedProcess |
-| 基础重试机制 | P1 | 重试中间件 |
+| 任务 | 优先级 | 工作量 | 交付物 |
+|------|--------|--------|--------|
+| transport 适配器迁移 | P0 | 2-3d | stdio/sse/http 适配器 + 客户端改造 |
+| WebSocket 路由注册 | P0 | 1d | WebSocket 客户端正式可用 |
+| 工具重命名串联 | P0 | 0.5d | 工具名重写在注册中生效 |
+| 缓存集成 | P0 | 0.5d | CallTool 走缓存查询 |
+| 重试串联 | P1 | 0.5d | 工具调用带重试 |
+| 钩子注入 | P1 | 1d | 请求处理管道可执行钩子 |
+| 批量调用 API | P1 | 0.5d | HTTP 端点 `/api/batch` |
+| 进程管理器替换 | P1 | 1-2d | stdio 进程带守护管理 |
 
-### 阶段二：协议扩展（3-4 周）
+**总计**: P0 4-5d + P1 3-4d ≈ **7-9 个工作日**
 
-**目标**：支持 WebSocket，建立统一协议抽象层
+### 阶段二：新功能开发（2-3 周）
 
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| WebSocket 客户端支持 | P0 | WebSocket MCPClient 实现 |
-| 统一协议适配层 | P0 | Transport 抽象接口 |
-| WebSocket 服务端暴露 | P1 | WebSocket 服务端点 |
-| 协议转换桥接 | P1 | ProtocolBridge 实现 |
+**目标**：实现限流、队列、连接池等高级特性。
 
-### 阶段三：功能增强（3-4 周）
+| 任务 | 优先级 | 工作量 | 交付物 |
+|------|--------|--------|--------|
+| 限流器实现 | P1 | 1d | 令牌桶 + 配置 |
+| 限流器集成 | P1 | 1d | HTTP 中间件 |
+| 请求队列实现 | P1 | 1.5d | 优先级队列 + worker pool |
+| 请求队列集成 | P1 | 1d | 服务端请求管道接入 |
+| WebSocket 服务端 | P1 | 2d | ws:// 端点暴露 |
+| 协议桥接 | P2 | 2d | 任意协议双向转换 |
+| 连接池 | P2 | 2d | 长连接复用 + 健康检查 |
 
-**目标**：工具管理、缓存、批量调用等功能
+**总计**: P1 5.5d + P2 4d ≈ **9.5 个工作日**
 
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 工具重命名与命名空间 | P0 | ToolRewriteConfig + 实现 |
-| 工具调用缓存 | P0 | ToolCallCache + 集成 |
-| 批量工具调用 | P1 | BatchCall API |
-| 转换钩子机制 | P1 | Hook 接口 + 内置钩子 |
+### 阶段三：运维与可观测性（1-2 周）
 
-### 阶段四：高级特性（2-3 周）
+**目标**：完善监控、指标、调试能力。
 
-**目标**：限流、队列、更多优化
+| 任务 | 优先级 | 工作量 | 说明 |
+|------|--------|--------|------|
+| Prometheus 指标 | P1 | 2d | 请求量/延迟/错误率/熔断状态 |
+| 健康检查增强 | P1 | 1d | 各服务独立健康状态 |
+| 调试 API | P2 | 1d | 实时查看缓存/熔断/队列状态 |
+| 配置热加载 | P2 | 2d | 不重启更新服务配置 |
 
-| 任务 | 优先级 | 交付物 |
-|------|--------|--------|
-| 限流器实现 | P1 | 令牌桶限流 + 集成 |
-| 请求队列 | P1 | RequestQueue |
-| 连接池管理 | P2 | ConnectionPool |
-| gRPC 协议支持（可选） | P2 | gRPC 服务 |
+**总计**: P1 3d + P2 3d ≈ **6 个工作日**
 
 ---
 
-## 6. 配置文件完整示例
+## 6. 依赖关系与里程碑
+
+### 6.1 任务依赖图
+
+```
+集成阶段 (阶段一)                     新功能阶段 (阶段二)
+                                    
+transport 适配器 ─→ WebSocket 路由   限流器 ─→ 限流集成
+                                                ↓
+工具重命名 ─→ 缓存集成                请求队列 ─→ 队列集成
+                                                ↓
+重试串联 ─→ 批量 API                  WebSocket 服务端
+
+钩子注入 ─→ 进程管理器                协议桥接 ─→ 连接池
+```
+
+### 6.2 里程碑
+
+| 里程碑 | 版本 | 内容 | 目标 |
+|--------|------|------|------|
+| **M1** | v1.1.0 | Transport 适配器迁移完成，WebSocket 正式可用 | 第 2 周末 |
+| **M2** | v1.2.0 | 工具重命名+缓存+重试集成完成 | 第 3 周末 |
+| **M3** | v1.3.0 | 所有模块集成完成，批量 API+钩子+进程管理 | 第 4 周末 |
+| **M4** | v2.0.0 | 限流器+请求队列+WebSocket 服务端 | 第 7 周末 |
+| **M5** | v2.1.0 | 协议桥接+连接池+可观测性 | 第 9 周末 |
+
+---
+
+## 7. 风险与缓解
+
+| 风险 | 影响 | 概率 | 缓解措施 |
+|------|------|------|----------|
+| Transport 适配器迁移破坏现有逻辑 | 高 | 中 | 逐协议迁移，充分单元测试 + 集成测试 |
+| WebSocket 客户端与核心接口不匹配 | 中 | 中 | 提前接口对齐，代码审查 |
+| 限流/队列影响正常请求延迟 | 中 | 低 | 压测验证，可配置关闭 |
+| 连接池资源泄漏 | 高 | 低 | 严格的新建/归还配对，泄漏检测 |
+| 模块集成后发现设计缺陷 | 中 | 中 | 预留缓冲时间，小步提交 |
+
+---
+
+## 8. 配置完整示例
 
 ```json
 {
@@ -744,12 +531,12 @@ type PromptHook interface {
     "version": "2.0.0",
     "type": "sse",
     "options": {
-      "panicIfInvalid": false,
-      "logEnabled": true,
       "callTimeout": "30s",
       "maxRetries": 3,
       "retryDelay": "1s",
-      "retryBackoff": 2.0
+      "retryBackoff": 2.0,
+      "rateLimit": 100.0,
+      "rateLimitBurst": 50
     }
   },
   "mcpServers": {
@@ -772,16 +559,12 @@ type PromptHook interface {
         }
       }
     },
-    "websocket-service": {
+    "my-service": {
       "transportType": "websocket",
       "url": "ws://localhost:8080/mcp",
-      "headers": {
-        "Authorization": "Bearer token"
-      },
       "options": {
-        "disablePing": false,
-        "maintenanceInterval": "30s",
-        "handshakeTimeout": "10s"
+        "handshakeTimeout": "10s",
+        "enableCompression": true
       }
     }
   }
@@ -790,38 +573,14 @@ type PromptHook interface {
 
 ---
 
-## 7. 总结
+## 9. 预期收益
 
-本方案聚焦于**功能层面优化**，重点包括：
-
-### 核心优化方向
-
-1. **协议支持扩展**
-   - 新增 WebSocket 协议（客户端 + 服务端）
-   - 统一协议抽象层
-   - 协议转换桥接
-
-2. **稳定性提升**
-   - 熔断器与服务隔离
-   - 分级超时与智能重试
-   - 请求队列与限流
-   - 资源管理优化
-   - 完善的错误处理
-
-3. **功能增强**
-   - 工具重命名与命名空间
-   - 工具调用缓存
-   - 批量工具调用
-   - 请求/响应转换钩子
-
-### 预期收益
-
-| 指标 | 改善 |
-|------|------|
-| 协议支持 | 3 种 → 4+ 种（含 WebSocket） |
-| 服务可用性 | 提升 20-30%（熔断+重试） |
-| 资源泄漏 | 降低 90%+ |
-| 开发效率 | 新协议接入成本降低 70% |
-| 工具冲突 | 完全解决（重命名机制） |
-
-通过分阶段实施，逐步将 MCP Gateway 打造成更稳定、更灵活、功能更丰富的 MCP 聚合平台。
+| 指标 | 当前 | 目标 |
+|------|------|------|
+| 协议支持 | 3 种 | 4+ 种（含 WebSocket） |
+| 服务可用性 | - | 提升 20-30%（熔断+重试+限流） |
+| 重复调用开销 | 100% | 降低 60%+（缓存命中时） |
+| 工具名冲突 | 可能 | 完全解决（重命名机制） |
+| 并发处理 | 无控制 | 限流+队列保障 |
+| 资源泄漏 | 偶发 | 降低 90%+（进程管理+连接池） |
+| 开发扩展 | 高成本 | 新协议接入成本降低 70%（Transport 接口） |
