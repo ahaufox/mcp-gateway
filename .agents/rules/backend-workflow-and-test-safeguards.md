@@ -1,4 +1,5 @@
 ---
+trigger: model_decision
 description: 后端工作流动态参数自适应解析与单元测试异步死锁、全局覆写残留污染的防范规则。
 ---
 

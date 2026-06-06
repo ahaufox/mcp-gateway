@@ -1,4 +1,5 @@
 ---
+trigger: always_on
 description: Cursor, Claude, Lingma, OpenCode AI编码助手的配置文件目录结构与配置格式规范。
 ---
 
