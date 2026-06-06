@@ -1,5 +1,5 @@
 ---
-alwaysApply: false
+trigger: model_decision
 description: 规定了在制定开发计划时，对于涉及接口变更及前后端协作的标准流程。
 ---
 

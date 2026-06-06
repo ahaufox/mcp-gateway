@@ -1,6 +1,6 @@
 ---
-alwaysApply: true
-scene: git_message
+trigger: always_on
+description: Git 提交信息规范，包括 Conventional Commits 格式和中文要求。
 ---
 - `feat`: 新功能
 - `fix`: 修补 Bug

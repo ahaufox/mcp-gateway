@@ -50,3 +50,4 @@ __pycache__
 images/
 venv/
 mcp-proxy/internal/server/frontend/dist/
+opencode.json
