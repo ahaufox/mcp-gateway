@@ -23,7 +23,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setError("");
 
     try {
-      // 验证 Token，向后端请求配置，验证是否能成功解析且不返回 401
       const response = await axios.get("/api/config", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,41 +51,55 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 bg-gradient-mesh flex items-center justify-center p-4">
-      <div className="w-full max-w-md stagger-in">
-        {/* LOGO */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 shadow-[0_0_20px_rgba(99,102,241,0.3)] mb-4">
-            <KeyRound className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-gray-950 bg-gradient-mesh flex items-center justify-center p-4 relative overflow-hidden">
+      {/* 漂浮光斑 */}
+      <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full blur-[80px] opacity-[0.22] pointer-events-none"
+        style={{ background: "radial-gradient(circle, #6366F1 0%, transparent 70%)", animation: "float 12s ease-in-out infinite" }} />
+      <div className="absolute top-[30%] right-[-150px] w-[500px] h-[500px] rounded-full blur-[80px] opacity-[0.22] pointer-events-none"
+        style={{ background: "radial-gradient(circle, #A855F7 0%, transparent 70%)", animation: "float 12s ease-in-out infinite", animationDelay: "-4s" }} />
+      <div className="absolute bottom-[-100px] left-[30%] w-[350px] h-[350px] rounded-full blur-[80px] opacity-[0.22] pointer-events-none"
+        style={{ background: "radial-gradient(circle, #3B82F6 0%, transparent 70%)", animation: "float 12s ease-in-out infinite", animationDelay: "-8s" }} />
+
+      <div className="relative z-10 w-full max-w-md stagger-in">
+        {/* 品牌区 */}
+        <div className="flex flex-col items-center mb-10">
+          <div className="relative w-20 h-20 mb-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl rotate-6 blur-xl opacity-60" />
+            <div className="relative w-full h-full bg-gradient-to-br from-violet-500/90 to-indigo-600/90 rounded-2xl flex items-center justify-center glass">
+              <span className="mono text-white text-2xl font-bold tracking-tighter">M</span>
+            </div>
           </div>
-          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 tracking-tight">
-            MCP Proxy 控制台
+          <h1 className="text-4xl font-bold tracking-tight text-gradient mb-2">
+            mcp-proxy
           </h1>
-          <p className="text-sm text-gray-400 mt-2">
-            请输入管理员授权的 Access Token 以继续
+          <p className="text-[13px] text-violet-200/60 tracking-wide">
+            Model Context Protocol Gateway
           </p>
         </div>
 
-        {/* 登录卡片 */}
-        <div className="glass-card rounded-3xl p-8 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-500/0 via-violet-500/40 to-violet-500/0" />
-          
-          <form onSubmit={handleVerify} className="space-y-6">
+        {/* 登录表单卡片 */}
+        <div className="glass rounded-3xl p-8 tilt-3d">
+          <div className="mb-6">
+            <h2 className="text-[22px] font-semibold text-white mb-1.5">欢迎回来</h2>
+            <p className="text-[13px] text-violet-200/60">输入访问令牌以进入控制台</p>
+          </div>
+
+          <form onSubmit={handleVerify} className="space-y-4">
             <div>
-              <label htmlFor="token" className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+              <label className="block text-[11px] font-medium uppercase tracking-[0.15em] text-violet-200/70 mb-2">
                 Access Token
               </label>
               <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-300/50" />
                 <input
                   type="password"
-                  id="token"
+                  placeholder="••••••••••••••••"
                   value={token}
                   onChange={(e) => {
                     setToken(e.target.value);
                     setError("");
                   }}
-                  placeholder="输入授权 Token"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-white placeholder-gray-500 transition-all duration-300 focus:bg-white/10 focus:border-violet-500/50"
+                  className="input-vp w-full h-12 pl-11 pr-4 rounded-xl text-[14px] text-white placeholder-violet-300/30 mono"
                   disabled={loading}
                 />
               </div>
@@ -102,22 +115,53 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-medium py-3 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(99,102,241,0.2)] disabled:opacity-50"
+              className="btn-glow w-full h-12 rounded-xl text-white text-[14px] font-semibold mt-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   <span>正在验证...</span>
                 </>
               ) : (
                 <>
-                  <span>进入控制台</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <span>验证并进入</span>
+                  <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
+
+          {/* 分割线 */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-white/10" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-violet-200/40">安全连接</span>
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-white/10" />
+          </div>
+
+          {/* 状态指示 */}
+          <div className="flex items-center justify-center gap-6 text-[11px] text-violet-200/50">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+              <span>TLS 加密</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+              <span>本地代理</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+              <span>v1.0.0</span>
+            </div>
+          </div>
         </div>
+
+        {/* 底部链接 */}
+        <p className="text-center mt-8 text-[11px] text-violet-200/40">
+          没有令牌？
+          <a href="#" className="text-violet-300 hover:text-white transition-colors ml-1">
+            查看文档
+          </a>
+        </p>
       </div>
     </div>
   );

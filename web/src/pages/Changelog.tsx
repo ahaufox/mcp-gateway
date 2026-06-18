@@ -1,156 +1,385 @@
 import React from "react";
 import { useTheme } from "../context/ThemeContext";
-import { History, GitCommit, Calendar, Tag, Sparkles, Code2 } from "lucide-react";
+import { Rss, BellPlus } from "lucide-react";
 
-interface ChangelogItem {
+interface ChangelogEntry {
   version: string;
   date: string;
-  colorClass: string;
-  dotColor: string;
+  subtitle: string;
+  title: string;
+  color: string;       // Tailwind color key: violet | cyan | emerald | amber | slate
+  isLatest: boolean;
   items: string[];
 }
 
-const changelogData: ChangelogItem[] = [
+const changelogData: ChangelogEntry[] = [
   {
-    version: "控制台架构重构 (SPA)",
+    version: "v2.0.0",
     date: "2026-06-03",
-    colorClass: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20",
-    dotColor: "bg-fuchsia-500",
+    subtitle: "控制台架构重构 (SPA)",
+    title: "全新 React 19 + TypeScript 控制台",
+    color: "violet",
+    isLatest: true,
     items: [
-      "控制台全重构: 使用 React 19 + TypeScript + Vite + Tailwind CSS 重构为前后端分离架构，大幅度优化交互体验，且打包资产自动由 Go 二进制文件嵌入。",
-      "鉴权机制升级: 废除多余的额外用户名密码配置，直接复用 Proxy 已有的全局 authTokens 进行拦截鉴权，前端自动管理 Token 状态，保障配置接口与监控接口的安全。",
-      "UI 深度优化: 全站覆盖深色模式与 Glassmorphism（磨砂玻璃卡片）美学设计，增加卡片缩放微动画、错误日志抽屉及可视化转换器选择器。"
-    ]
+      "控制台全重构 — React 19 + TypeScript + Vite + Tailwind CSS，资产自动由 Go 二进制嵌入",
+      "鉴权机制升级 — 复用 Proxy 全局 authTokens，前端自动管理 Token 状态",
+      "UI 深度优化 — 全站深色模式与 Glassmorphism 设计，卡片缩放动画与可视化转换器",
+    ],
   },
   {
-    version: "抖音 MCP 服务集成",
+    version: "v1.3.0",
     date: "2026-02-14",
-    colorClass: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    dotColor: "bg-violet-500",
+    subtitle: "抖音 MCP 服务集成",
+    title: "集成 douyin-mcp 视频解析",
+    color: "cyan",
+    isLatest: false,
     items: [
-      "新增服务: 集成 douyin-mcp 抖音视频解析服务，支持无水印下载、图文作品下载、AI 语音文案提取等功能。",
-      "编排扩展: docker-compose 新增 douyin-mcp 与 jules-mcp-server 容器编排，支持健康检查与自动依赖启动。",
-      "协议统一: Jules 和 Douyin 服务统一采用 SSE 传输协议，修复 Docker 内部网络通信异常。",
-      "文档同步: README 新增已集成 MCP Server 一览表，完善项目结构描述。"
-    ]
+      "新增服务 — 支持无水印下载、图文作品下载、AI 语音文案提取",
+      "协议统一 — Jules 和 Douyin 服务统一采用 SSE 传输协议",
+      "编排扩展 — docker-compose 新增容器编排与健康检查",
+    ],
   },
   {
-    version: "架构重构与监控增强",
+    version: "v1.2.0",
     date: "2026-02-13",
-    colorClass: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    dotColor: "bg-blue-500",
+    subtitle: "架构重构与监控增强",
+    title: "实时健康监控与标准 Go 布局",
+    color: "emerald",
+    isLatest: false,
     items: [
-      "状态监控: Dashboard 新增 MCP 服务健康状态实时显示（连接/失败/不健康）及错误详情展示。",
-      "标准架构: 重构项目目录为标准 Go 布局（cmd, internal），提升代码可维护性。",
-      "环境隔离: 支持 AUTH_TOKENS 和 MCP_BASE_URL 环境变量注入，避免敏感配置硬编码。",
-      "权限控制: 优化 Token 解析逻辑，支持通过环境变量注入逗号分隔的多 Token 列表。"
-    ]
+      "状态监控 — Dashboard 新增 MCP 服务健康状态实时显示",
+      "标准架构 — 重构项目目录为标准 Go 布局（cmd, internal）",
+      "环境隔离 — 支持 AUTH_TOKENS 与 MCP_BASE_URL 注入",
+    ],
   },
   {
-    version: "界面重构与汉化",
+    version: "v1.1.0",
     date: "2026-02-12",
-    colorClass: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    dotColor: "bg-indigo-500",
+    subtitle: "界面重构与汉化",
+    title: "Glassmorphism 设计与全站汉化",
+    color: "amber",
+    isLatest: false,
     items: [
-      "功能增强: 配置转换器新增 Antigravity 格式支持，一键生成专用配置。",
-      "视觉升级: 采用全新的 Glassmorphism 设计风格，统一 Dashboard 与工具页面视觉。",
-      "体验优化: 完成全站中文化，精简页脚信息，从 docs 目录迁移至模板引擎渲染。"
-    ]
+      "功能增强 — 配置转换器新增 Antigravity 格式支持",
+      "视觉升级 — 全新 Glassmorphism 设计风格统一全站",
+      "体验优化 — 完成全站中文化，精简页脚信息",
+    ],
   },
   {
-    version: "初始化发布",
+    version: "v1.0.0",
     date: "2024-03-20",
-    colorClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    dotColor: "bg-emerald-500",
+    subtitle: "初始化发布",
+    title: "核心 MCP 代理首发",
+    color: "slate",
+    isLatest: false,
     items: [
-      "核心发布: 发布核心 MCP 代理功能，支持 SSE 与 Streamable HTTP 传输协议。"
-    ]
-  }
+      "核心发布 — 发布 MCP 代理功能，支持 SSE 与 Streamable HTTP 传输协议",
+    ],
+  },
+];
+
+// ── 颜色映射 ──
+const colorMap: Record<string, {
+  badgeBg: string; badgeText: string;
+  dotBg: string;
+  blurBg: string;
+  statBlur: string; statLabel: string;
+  itemDot: string;
+}> = {
+  violet: {
+    badgeBg: "bg-gradient-to-br from-violet-500 to-indigo-600",
+    badgeText: "text-white",
+    dotBg: "bg-gradient-to-br from-violet-400 to-indigo-600",
+    blurBg: "bg-violet-500/20",
+    statBlur: "bg-violet-500/20",
+    statLabel: "text-violet-300/60",
+    itemDot: "bg-violet-400",
+  },
+  cyan: {
+    badgeBg: "glass-strong",
+    badgeText: "text-cyan-300",
+    dotBg: "bg-gradient-to-br from-cyan-400 to-blue-600",
+    blurBg: "bg-cyan-500/20",
+    statBlur: "bg-cyan-500/20",
+    statLabel: "text-cyan-300/60",
+    itemDot: "bg-cyan-400",
+  },
+  emerald: {
+    badgeBg: "glass-strong",
+    badgeText: "text-emerald-300",
+    dotBg: "bg-gradient-to-br from-emerald-400 to-cyan-600",
+    blurBg: "bg-emerald-500/20",
+    statBlur: "bg-emerald-500/20",
+    statLabel: "text-emerald-300/60",
+    itemDot: "bg-emerald-400",
+  },
+  amber: {
+    badgeBg: "glass-strong",
+    badgeText: "text-amber-300",
+    dotBg: "bg-gradient-to-br from-amber-400 to-orange-600",
+    blurBg: "bg-amber-500/20",
+    statBlur: "bg-amber-500/20",
+    statLabel: "text-amber-300/60",
+    itemDot: "bg-amber-400/60",
+  },
+  slate: {
+    badgeBg: "glass-strong",
+    badgeText: "text-slate-300",
+    dotBg: "bg-gradient-to-br from-slate-400 to-slate-600",
+    blurBg: "bg-slate-500/20",
+    statBlur: "bg-slate-500/20",
+    statLabel: "text-slate-300/60",
+    itemDot: "bg-slate-400",
+  },
+};
+
+// ── 统计指标数据 ──
+const stats = [
+  {
+    value: changelogData.length,
+    unit: "个",
+    label: "累计版本",
+    color: "violet" as const,
+  },
+  {
+    value: changelogData.reduce((s, e) => s + e.items.length, 0),
+    unit: "项",
+    label: "变更条目",
+    color: "cyan" as const,
+  },
+  {
+    value: changelogData[0].date,
+    unit: "",
+    label: "最新发布",
+    color: "emerald" as const,
+  },
+  {
+    value: changelogData[changelogData.length - 1].date,
+    unit: "",
+    label: "起始时间",
+    color: "amber" as const,
+  },
 ];
 
 export const Changelog: React.FC = () => {
   const { theme } = useTheme();
-  const totalReleases = changelogData.length;
-  const totalChanges = changelogData.reduce((sum, item) => sum + item.items.length, 0);
-  const firstReleaseDate = changelogData[changelogData.length - 1]?.date;
-  const latestReleaseDate = changelogData[0]?.date;
+  const isDark = theme === "dark";
 
   return (
-    <div className="space-y-8 stagger-in">
-      {/* 头部 */}
-      <div>
-        <h1 className={`text-2xl font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-          <History className="w-6 h-6 text-violet-500" />
-          <span>更新日志</span>
-        </h1>
-        <p className={`text-sm mt-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-          追踪 mcp-proxy 的版本迭代历程与核心技术演进
-        </p>
-      </div>
+    <div className="space-y-8 stagger-in max-w-5xl mx-auto">
+      {/* ── 头部 ── */}
+      <header className="flex items-center justify-between border-b pb-4"
+        style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)" }}>
+        <div>
+          <h1 className={`text-xl font-semibold tracking-tight ${isDark ? "text-gradient" : "text-gray-900"}`}>
+            更新日志
+          </h1>
+          <p className={`text-[11px] mt-0.5 ${isDark ? "text-violet-200/50" : "text-gray-500"}`}>
+            追踪 mcp-proxy 的版本迭代历程
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href="#"
+            className={`h-9 px-3 rounded-lg text-xs flex items-center gap-1.5 no-underline transition-colors ${
+              isDark
+                ? "glass-strong text-violet-200/80 hover:text-white"
+                : "bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <Rss className="w-3.5 h-3.5" />
+            <span>RSS</span>
+          </a>
+          <button
+            className={`h-9 px-3 rounded-lg text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
+              isDark ? "btn-glow" : "bg-violet-600 hover:bg-violet-700 shadow-md"
+            }`}
+          >
+            <BellPlus className="w-3.5 h-3.5" />
+            <span>订阅更新</span>
+          </button>
+        </div>
+      </header>
 
-      {/* 版本概览统计卡片 */}
+      {/* ── 统计指标卡片 ── */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { icon: Tag, label: "累计版本", value: totalReleases, color: "violet", unit: "个" },
-          { icon: Code2, label: "变更条目", value: totalChanges, color: "emerald", unit: "项" },
-          { icon: Sparkles, label: "最新发布", value: latestReleaseDate, color: "indigo", unit: "", isText: true },
-          { icon: Calendar, label: "起始时间", value: firstReleaseDate, color: "amber", unit: "", isText: true }
-        ].map((item, idx) => {
-          const colorMap: Record<string, { bg: string; text: string; border: string }> = {
-            violet: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20" },
-            emerald: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-            indigo: { bg: "bg-indigo-500/10", text: "text-indigo-400", border: "border-indigo-500/20" },
-            amber: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" }
-          };
-          const c = colorMap[item.color];
+        {stats.map((s, idx) => {
+          const cm = colorMap[s.color];
+          const isText = s.color === "emerald" || s.color === "amber";
           return (
-            <div key={idx} className={`glass-card rounded-2xl p-4 border flex items-center gap-3 ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
-              <div className={`p-2 rounded-xl ${c.bg} border ${c.border} shrink-0`}>
-                <item.icon className={`w-5 h-5 ${c.text}`} />
-              </div>
-              <div className="min-w-0">
-                <div className={`text-lg font-extrabold truncate ${item.isText ? "text-base" : ""} ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                  {item.value}{!item.isText && item.unit && <span className={`text-sm font-bold ${c.text} ml-0.5`}>{item.unit}</span>}
+            <div
+              key={idx}
+              className={`glass hover-lift rounded-2xl p-5 relative overflow-hidden ${
+                isDark ? "" : "!bg-white/90 !border-gray-200"
+              }`}
+            >
+              <div
+                className={`absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl ${cm.statBlur}`}
+              />
+              <div className="relative">
+                <div
+                  className={`text-[10px] font-semibold uppercase tracking-[0.15em] mb-3 ${cm.statLabel}`}
+                >
+                  {s.label}
                 </div>
-                <div className={`text-[10px] font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{item.label}</div>
+                <div className="flex items-baseline gap-1">
+                  <span
+                    className={`${
+                      isText ? "text-[15px] font-semibold" : "text-[32px] font-bold leading-none"
+                    } ${
+                      isText
+                        ? s.color === "emerald"
+                          ? "text-emerald-300"
+                          : "text-amber-300"
+                        : isDark
+                          ? "text-gradient"
+                          : "text-gray-900"
+                    } mono`}
+                  >
+                    {s.value}
+                  </span>
+                  {s.unit && (
+                    <span className={`text-xs ${isDark ? "text-violet-300/40" : "text-gray-400"}`}>
+                      {s.unit}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
       </section>
 
-      {/* 垂直时间线布局 */}
-      <div className="relative pl-6 md:pl-8 space-y-12">
-        <div className="timeline-line" />
+      {/* ── 时间线 ── */}
+      <div className="relative pl-10">
+        {/* 渐变主线 */}
+        <div className="timeline-line-enhanced" />
 
-        {changelogData.map((version, index) => (
-          <div key={index} className="relative stagger-in" style={{ animationDelay: `${index * 0.1}s` }}>
-            {/* 时间点 */}
-            <span className={`absolute -left-[27px] md:-left-[31px] top-1.5 flex h-4 w-4 rounded-full border-4 border-gray-950 ${version.dotColor} shadow-[0_0_8px_rgba(255,255,255,0.15)]`} />
+        {changelogData.map((entry, index) => {
+          const cm = colorMap[entry.color];
+          const isOld = entry.color === "amber" || entry.color === "slate";
+          const opacityClass = entry.color === "amber" ? "opacity-90" : entry.color === "slate" ? "opacity-80" : "";
 
-            {/* 卡片 */}
-            <div className="glass-card rounded-3xl p-6 md:p-8 hover:shadow-[0_4px_24px_rgba(99,102,241,0.02)]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                <h2 className={`text-lg font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                  <GitCommit className="w-4 h-4 text-violet-400" />
-                  <span>{version.version}</span>
-                </h2>
-                <span className={`px-3 py-1 rounded-xl text-xs font-bold border self-start sm:self-center ${version.colorClass}`}>
-                  {version.date}
-                </span>
+          return (
+            <div key={index} className={`relative ${index < changelogData.length - 1 ? "pb-10" : ""}`}>
+              {/* 时间线圆点 */}
+              <div className="absolute -left-10 top-2 flex items-center justify-center">
+                <div
+                  className={`${
+                    entry.isLatest ? "w-5 h-5" : "w-4 h-4"
+                  } rounded-full ${cm.dotBg} ${
+                    entry.isLatest ? "timeline-dot pulse-dot-anim" : isOld ? "timeline-dot-old" : "timeline-dot"
+                  }`}
+                />
               </div>
 
-              <ul className="space-y-3.5">
-                {version.items.map((bullet, bidx) => (
-                  <li key={bidx} className={`flex items-start text-xs leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${version.dotColor} shrink-0 mt-1.5 mr-3 opacity-60`} />
-                    <span>{bullet}</span>
-                  </li>
-                ))}
-              </ul>
+              {/* 版本卡片 */}
+              <div
+                className={`glass hover-lift rounded-2xl p-7 relative overflow-hidden ${opacityClass} ${
+                  isDark ? "" : "!bg-white/90 !border-gray-200"
+                }`}
+              >
+                {/* 模糊光斑（仅最新版本） */}
+                {entry.isLatest && (
+                  <div className="absolute -top-20 -right-20 w-60 h-60 bg-violet-500/20 rounded-full blur-3xl pointer-events-none" />
+                )}
+
+                {/* 模糊光斑（其他版本） */}
+                {!entry.isLatest && (
+                  <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full blur-2xl pointer-events-none ${cm.blurBg}`} />
+                )}
+
+                <div className="relative">
+                  {/* 卡片头部 */}
+                  <div
+                    className="flex items-start justify-between mb-5 pb-5 border-b"
+                    style={{ borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)" }}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <span
+                          className={`mono text-[10px] px-2 h-5 inline-flex items-center rounded-md ${cm.badgeBg} ${cm.badgeText} uppercase tracking-wider font-semibold`}
+                        >
+                          {entry.version}
+                        </span>
+                        <span className={`w-1 h-1 rounded-full ${isDark ? "bg-violet-300/40" : "bg-gray-300"}`} />
+                        <span className={`text-[11px] ${isDark ? "text-violet-300/70" : "text-gray-500"}`}>
+                          {entry.subtitle}
+                        </span>
+                        {entry.isLatest && (
+                          <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 uppercase tracking-wider">
+                            Latest
+                          </span>
+                        )}
+                      </div>
+                      <h3 className={`text-xl font-semibold tracking-tight ${isDark ? "text-white" : "text-gray-900"}`}>
+                        {entry.title}
+                      </h3>
+                    </div>
+                    <span className={`mono text-[11px] shrink-0 ${isDark ? "text-violet-300/50" : "text-gray-400"}`}>
+                      {entry.date}
+                    </span>
+                  </div>
+
+                  {/* 变更条目列表 */}
+                  <ul className="space-y-3.5">
+                    {entry.items.map((item, iidx) => (
+                      <li
+                        key={iidx}
+                        className={`flex items-start gap-3 text-[13px] leading-relaxed ${
+                          isDark ? "text-violet-200/80" : "text-gray-600"
+                        }`}
+                      >
+                        {entry.isLatest ? (
+                          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-violet-500/30 to-indigo-500/30 border border-violet-400/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <svg className="w-3 h-3 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <div className={`w-1.5 h-1.5 rounded-full ${cm.itemDot} mt-2 shrink-0`} />
+                        )}
+                        <div>
+                          {entry.isLatest ? (
+                            (() => {
+                              const colonIdx = item.indexOf("—");
+                              if (colonIdx > 0) {
+                                return (
+                                  <>
+                                    <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                      {item.slice(0, colonIdx).trim()}
+                                    </span>
+                                    <span>{item.slice(colonIdx)}</span>
+                                  </>
+                                );
+                              }
+                              return <span>{item}</span>;
+                            })()
+                          ) : (
+                            (() => {
+                              const colonIdx = item.indexOf("—");
+                              if (colonIdx > 0) {
+                                return (
+                                  <>
+                                    <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>
+                                      {item.slice(0, colonIdx).trim()}
+                                    </span>
+                                    <span>{item.slice(colonIdx)}</span>
+                                  </>
+                                );
+                              }
+                              return <span>{item}</span>;
+                            })()
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

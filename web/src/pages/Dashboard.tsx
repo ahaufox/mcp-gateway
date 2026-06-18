@@ -215,10 +215,10 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8 stagger-in">
       {/* ========== Hero 区域 ========== */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 glass-card p-8 md:p-10">
+      <section className="relative overflow-hidden rounded-3xl glass p-8 md:p-10">
         {/* 背景装饰 */}
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-600/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-indigo-600/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-10 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1">
@@ -226,10 +226,10 @@ export const Dashboard: React.FC = () => {
               <Rocket className="w-3.5 h-3.5" />
               <span>v1.0.0 · React SPA 控制台</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              实时监控你的 <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-indigo-400">MCP 网关</span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gradient tracking-tight leading-tight">
+              实时监控你的 MCP 网关
             </h1>
-            <p className={`text-sm md:text-base mt-3 max-w-2xl leading-relaxed ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+            <p className={`text-sm md:text-base mt-3 max-w-2xl leading-relaxed ${theme === "dark" ? "text-violet-200/60" : "text-gray-600"}`}>
               本仪表盘将所有接入的 MCP Server 的状态、路由端点、工具 / 提示 / 资源清单集中呈现，
               并支持 15 秒自动刷新与搜索过滤，帮助你第一时间发现接入异常。
             </p>
@@ -242,7 +242,7 @@ export const Dashboard: React.FC = () => {
                 { icon: <ArrowRightLeft className="w-3.5 h-3.5" />, label: "Claude / Trae 格式互转" },
                 { icon: <Boxes className="w-3.5 h-3.5" />, label: "Tools / Prompts / Resources" },
               ].map((item, idx) => (
-                <div key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[11px] text-gray-400 font-medium">
+                <div key={idx} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium ${theme === "dark" ? "bg-white/5 border border-white/5 text-violet-200/70" : "bg-gray-100 border border-gray-200 text-gray-600"}`}>
                   <span className="text-violet-400">{item.icon}</span>
                   {item.label}
                 </div>
@@ -308,7 +308,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* ========== 工具栏 ========== */}
-      <section className="flex flex-col gap-3 glass-card rounded-2xl p-4 border border-white/10">
+      <section className="flex flex-col gap-3 glass rounded-2xl p-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1">
             <div className="relative flex-1 md:max-w-sm">
@@ -318,7 +318,7 @@ export const Dashboard: React.FC = () => {
                 placeholder="搜索服务器名 / 路由 / 描述..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:bg-white/10 focus:border-violet-500/50 focus:outline-none transition-all duration-300"
+                className="input-vp w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none transition-all duration-300"
               />
             </div>
             <span className={`text-[11px] hidden md:inline ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
@@ -402,10 +402,10 @@ export const Dashboard: React.FC = () => {
             return (
               <div
                 key={server.Name}
-                className={`glass-card rounded-3xl overflow-hidden transition-all duration-500 border ${
+                className={`glass-subtle hover-lift rounded-2xl overflow-hidden transition-all duration-500 border ${
                   isExpanded
                     ? "border-violet-500/30 shadow-[0_4px_32px_rgba(99,102,241,0.08)]"
-                    : "border-white/10 hover:border-white/20"
+                    : "border-white/5"
                 }`}
               >
                 {/* 头部 — 可点击展开 */}
@@ -546,14 +546,14 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* ========== 使用提示 ========== */}
-      <section className="glass-card rounded-3xl p-6 md:p-8 border border-white/10">
+      <section className="glass rounded-3xl p-6 md:p-8">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/20 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-400/30 flex items-center justify-center shrink-0">
             <Zap className="w-5 h-5 text-violet-300" />
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white mb-1">快速接入你的客户端</h3>
-            <p className="text-sm text-gray-400 leading-relaxed">
+            <p className="text-sm text-violet-200/60 leading-relaxed">
               复制上方任一端点 URL，粘贴到 Claude Desktop / Trae / Antigravity 等 MCP 客户端的配置文件即可直接使用。
               如果网关启用了鉴权，请记得在请求头附带 <code className="text-violet-300 font-mono text-[11px] bg-black/40 px-1.5 py-0.5 rounded">Authorization: Bearer &lt;token&gt;</code>。
               需要批量转换配置？前往 <span className="text-violet-300 font-bold">配置转换</span> 页面一键生成。
@@ -579,13 +579,16 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
 }) => {
   const c = colorMap[color];
   return (
-    <div className={`glass-card rounded-2xl p-5 border transition-all duration-300 ${theme === "dark" ? "border-white/10 hover:border-white/15" : "border-gray-200 hover:border-gray-300"}`}>
-      <div className="flex items-start justify-between mb-3">
-        <p className={`text-[11px] font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{label}</p>
-        <div className={`p-2 rounded-xl ${c.bg} ${c.text}`}>{icon}</div>
+    <div className={`glass hover-lift rounded-2xl p-5 relative overflow-hidden transition-all duration-300`}>
+      <div className={`absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl ${c.bg}`} />
+      <div className="relative">
+        <div className="flex items-start justify-between mb-3">
+          <p className={`text-[10px] font-bold uppercase tracking-wider ${theme === "dark" ? "text-violet-300/60" : "text-gray-500"}`}>{label}</p>
+          <div className={`p-2 rounded-xl ${c.bg} ${c.text}`}>{icon}</div>
+        </div>
+        <h3 className={`text-[32px] font-bold leading-none mono text-gradient`}>{value}</h3>
+        {sub && <p className={`text-[11px] mt-2 ${c.text}`}>{sub}</p>}
       </div>
-      <h3 className={`text-3xl font-extrabold leading-none ${theme === "dark" ? "text-white" : "text-gray-900"}`}>{value}</h3>
-      {sub && <p className={`text-[11px] mt-2 ${c.text}`}>{sub}</p>}
     </div>
   );
 };
@@ -593,9 +596,9 @@ const StatCard: React.FC<{ label: string; value: number; icon: React.ReactNode; 
 const StatMiniCard: React.FC<{ label: string; value: number; color: keyof typeof colorMap; theme: string }> = ({ label, value, color, theme }) => {
   const c = colorMap[color];
   return (
-    <div className={`p-3 rounded-2xl border ${c.border} ${c.bg} text-center`}>
-      <div className={`text-2xl font-extrabold ${c.text}`}>{value}</div>
-      <div className={`text-[10px] mt-0.5 font-bold uppercase tracking-wider ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>{label}</div>
+    <div className={`p-3 rounded-2xl glass text-center`}>
+      <div className={`text-2xl font-extrabold mono ${c.text}`}>{value}</div>
+      <div className={`text-[10px] mt-0.5 font-bold uppercase tracking-wider ${theme === "dark" ? "text-violet-300/50" : "text-gray-500"}`}>{label}</div>
     </div>
   );
 };
@@ -607,9 +610,9 @@ const ArrowRightInline: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const EmptyState: React.FC<{ hasServers: boolean; theme: string }> = ({ hasServers, theme }) => (
-  <div className={`glass-card rounded-3xl p-12 text-center border ${theme === "dark" ? "border-white/10" : "border-gray-200"}`}>
-    <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4">
-      <Server className="w-7 h-7 text-violet-400" />
+  <div className={`glass rounded-3xl p-12 text-center`}>
+    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-400/30 flex items-center justify-center mx-auto mb-4">
+      <Server className="w-7 h-7 text-violet-300" />
     </div>
     <h3 className={`text-lg font-extrabold mb-1 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
       {hasServers ? "没有匹配的服务器" : "暂无已注册的 MCP 服务器"}

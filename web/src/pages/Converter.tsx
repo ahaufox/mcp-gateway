@@ -6,19 +6,15 @@ import {
   Copy,
   Check,
   AlertCircle,
-  Info,
-  Server,
-  Settings,
   HelpCircle,
   X,
   ChevronDown,
-  MonitorSmartphone,
+  Download,
 } from "lucide-react";
 import { detectPlatform, getPlatformLabel, getConfigPathForPlatform, type Platform } from "../utils/platform";
 import {
   type ClientDef,
   CLIENTS,
-  convertToProxy,
   convertToFormat
 } from "../utils/mcpConverter";
 
@@ -40,9 +36,7 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; ring
 const CATEGORY_LABELS: Record<string, string> = {
   ide: "IDE / 编辑器",
   terminal: "终端 / CLI",
-  assistant: "AI 助手",
   platform: "AI 平台",
-  native: "本代理",
 };
 
 // ─── 组件 ──────────────────────────────────────────────
@@ -134,13 +128,8 @@ export const Converter: React.FC = () => {
   }, [selectedClientDef, selectedPlatform]);
 
   const currentOutput = useMemo(() => {
-    if (selectedClientDef.fmtType === "proxy") {
-      const proxyOut = convertToProxy(proxyConfig, overrideToken, selectedServers);
-      return proxyOut ? JSON.stringify(proxyOut, null, 2) : "";
-    }
-    // 对于其他客户端，使用根据其配置格式生成的输出
     return formattedOutput;
-  }, [selectedClientDef, proxyConfig, overrideToken, selectedServers, formattedOutput]);
+  }, [formattedOutput]);
 
   // ── 模糊搜索客户端 ──
 
@@ -180,8 +169,8 @@ export const Converter: React.FC = () => {
       {/* ── 头部 ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={`text-3xl font-bold tracking-tight flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            <ArrowRightLeft className="w-7 h-7 text-violet-600 dark:text-violet-500" />
+          <h1 className={`text-3xl font-bold tracking-tight flex items-center gap-2 text-gradient`}>
+            <ArrowRightLeft className="w-7 h-7 text-violet-500" />
             <span>配置格式转换器</span>
           </h1>
           <p className={`text-sm mt-1.5 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
@@ -201,7 +190,7 @@ export const Converter: React.FC = () => {
       {/* ── 使用指南 弹出框 ── */}
       {showGuide && (
         <div className="relative">
-          <div className={`glass-card rounded-2xl p-5 border ${theme === "dark" ? "border-violet-500/20" : "border-violet-200"} ${theme === "dark" ? "bg-violet-500/5" : "bg-violet-50/80"}`}>
+          <div className={`glass-strong rounded-2xl p-5 border ${theme === "dark" ? "border-violet-500/20" : "border-violet-200"}`}>
             <div className="flex items-start justify-between mb-3">
               <h3 className={`text-base font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>快速使用指南</h3>
               <button onClick={() => setShowGuide(false)} className={`cursor-pointer ${theme === "dark" ? "text-gray-400 hover:text-white" : "text-gray-400 hover:text-gray-600"}`}>
@@ -252,7 +241,7 @@ export const Converter: React.FC = () => {
             placeholder="搜索客户端..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full border rounded-xl px-3 py-2 text-sm transition-all focus:outline-none focus:border-violet-400 ${theme === "dark" ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-violet-500/50" : "bg-white border-gray-200 text-gray-800 placeholder-gray-400"}`}
+            className={`input-vp w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none ${theme === "dark" ? "bg-white/5 text-white placeholder-gray-500" : "bg-white text-gray-800 placeholder-gray-400"}`}
           />
             {searchQuery && (
               <button
@@ -287,12 +276,10 @@ export const Converter: React.FC = () => {
                   <button
                     key={client.id}
                     onClick={() => setSelectedClient(client.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-300 cursor-pointer group ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer group ${
                       isActive
-                        ? `${c.bg} ${c.border} ${c.text} ring-1 ${c.ring} shadow-sm`
-                        : theme === "dark"
-                          ? "bg-white/[0.02] border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10 hover:bg-white/[0.04]"
-                          : "bg-gray-50 border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-100"
+                        ? `pill-active ${c.bg}`
+                        : `pill ${theme === "dark" ? "bg-white/[0.02]" : "bg-gray-50"}`
                     }`}
                     title={`${client.name}: ${client.desc}`}
                   >
@@ -311,161 +298,171 @@ export const Converter: React.FC = () => {
         {/* 左侧控制栏 */}
         <div className="lg:col-span-5 space-y-6">
           {/* 服务器选择 */}
-          <div className="glass-card rounded-3xl p-6">
-            <h3 className={`text-base font-bold mb-4 flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            <Server className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <span>选择要导出的服务器</span>
-          </h3>
+          <div className="glass rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-[11px] font-semibold uppercase tracking-[0.15em] ${theme === "dark" ? "text-violet-300/70" : "text-violet-500/70"}`}>导出服务器</h3>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSelectedServers(new Set(availableServers))} className={`text-[10px] uppercase tracking-[0.15em] font-semibold cursor-pointer ${theme === "dark" ? "text-violet-300 hover:text-white" : "text-violet-500 hover:text-violet-800"}`}>全选</button>
+                <button onClick={() => setSelectedServers(new Set())} className={`text-[10px] uppercase tracking-[0.15em] font-semibold cursor-pointer ${theme === "dark" ? "text-violet-300/50 hover:text-violet-200" : "text-violet-500/50 hover:text-violet-700"}`}>清空</button>
+              </div>
+            </div>
 
-          {availableServers.length === 0 ? (
-            <p className={`text-sm italic ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>暂无可用服务器配置</p>
-          ) : (
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto pr-1">
+            {availableServers.length === 0 ? (
+              <p className={`text-[12px] italic ${theme === "dark" ? "text-violet-300/40" : "text-violet-500/50"}`}>暂无可用服务器配置</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-1.5">
                   {availableServers.map(server => (
                     <button
-                    key={server}
-                    onClick={() => toggleServer(server)}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 cursor-pointer ${
-                      selectedServers.has(server)
-                        ? theme === "dark"
-                          ? "bg-violet-500/10 border-violet-500/30 text-violet-300 hover:bg-violet-500/20"
-                          : "bg-violet-50 border-violet-300 text-violet-700 hover:bg-violet-100"
-                        : theme === "dark"
-                          ? "bg-white/5 border-white/5 text-gray-500 hover:text-gray-400 hover:border-white/10"
-                          : "bg-gray-50 border-gray-200 text-gray-600 hover:text-gray-800 hover:border-gray-300"
-                    }`}
-                  >
-                    {server}
-                  </button>
+                      key={server}
+                      onClick={() => toggleServer(server)}
+                      className={`pill h-7 px-3 border rounded-lg text-[11px] cursor-pointer ${
+                        selectedServers.has(server)
+                          ? "pill-active"
+                          : ""
+                      }`}
+                    >
+                      {server}
+                    </button>
                   ))}
                 </div>
 
-                <div className={`flex gap-3 border-t pt-3 ${theme === "dark" ? "border-white/5" : "border-gray-200"}`}>
-                  <button onClick={() => setSelectedServers(new Set(availableServers))} className={`text-xs font-bold cursor-pointer uppercase tracking-wider ${theme === "dark" ? "text-violet-400 hover:text-violet-300" : "text-violet-600 hover:text-violet-500"}`}>全选</button>
-                  <button onClick={() => setSelectedServers(new Set())} className={`text-xs font-bold cursor-pointer uppercase tracking-wider ${theme === "dark" ? "text-gray-500 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"}`}>清空</button>
+                <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                  <span className={`text-[10px] mono ${theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}`}>
+                    已选 {selectedServers.size} / 共 {availableServers.length}
+                  </span>
+                  <div className="flex-1 mx-3 h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-300"
+                      style={{ width: `${availableServers.length > 0 ? (selectedServers.size / availableServers.length) * 100 : 0}%`, boxShadow: "0 0 10px #8B5CF6" }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           {/* Token 重写 */}
-          <div className="glass-card rounded-3xl p-6">
-            <h3 className={`text-base font-bold mb-4 flex items-center gap-2 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            <Settings className="w-4 h-4 text-violet-600 dark:text-violet-400" />
-            <span>覆盖 Authorization Token (可选)</span>
-          </h3>
-          <input
-            type="text"
-            placeholder="若填入，导出的所有服务器都将强行使用该 Token"
-            value={overrideToken}
-            onChange={(e) => setOverrideToken(e.target.value)}
-            className={`w-full border rounded-2xl px-4 py-3 text-sm transition-all focus:outline-none focus:border-violet-400 ${theme === "dark" ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-violet-500/50" : "bg-white border-gray-200 text-gray-800 placeholder-gray-400"}`}
-          />
-            <div className="flex gap-2 items-start mt-3 text-xs text-gray-500 dark:text-gray-500 leading-relaxed">
-              <Info className="w-3.5 h-3.5 shrink-0 text-violet-500 mt-0.5" />
-              <span>如果不填写，转换器将默认读取 <code className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded">mcpServers.&lt;name&gt;.options.authTokens[0]</code>，或使用全局 <code className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded">mcpProxy.options.authTokens[0]</code> 作为备用。</span>
-            </div>
+          <div className="glass rounded-2xl p-5">
+            <h3 className={`text-[11px] font-semibold uppercase tracking-[0.15em] mb-3 ${theme === "dark" ? "text-violet-300/70" : "text-violet-500/70"}`}>覆盖 Token（可选）</h3>
+            <input
+              type="text"
+              placeholder="Bearer token..."
+              value={overrideToken}
+              onChange={(e) => setOverrideToken(e.target.value)}
+              className={`input-vp w-full h-9 px-3 rounded-lg text-[12px] mono ${theme === "dark" ? "text-white placeholder-violet-300/30" : "text-gray-800 placeholder-gray-400"}`}
+            />
+            <p className={`text-[10px] mt-2 leading-relaxed ${theme === "dark" ? "text-violet-300/40" : "text-violet-500/50"}`}>填入后所有导出服务器将统一使用此 Token</p>
           </div>
         </div>
 
         {/* 右侧输出栏 — 单客户端输出 */}
-        <div className="lg:col-span-7">
-          <div className="glass-card rounded-3xl p-6 flex flex-col h-[calc(280px+280px+1.5rem)]">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${COLOR_MAP[selectedClientDef.color].bg} border ${COLOR_MAP[selectedClientDef.color].border}`}>
-                  <selectedClientDef.icon className={`w-5 h-5 ${COLOR_MAP[selectedClientDef.color].text}`} />
-                </div>
-                <div>
-                  <h3 className={`text-base font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                    {selectedClientDef.name} 配置
-                    <span className={`ml-2 text-xs font-normal ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}>
-                      {selectedClientDef.fmtType === "proxy"
-                        ? "原生格式"
-                        : selectedClientDef.configFormat.useStdioBridge
-                          ? "Stdio 桥接格式"
-                          : "远程 URL 格式"}
-                    </span>
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className={`text-xs ${theme === "dark" ? "text-gray-500" : "text-gray-500"}`}>
-                      {selectedClientDef.fmtType === "proxy"
-                        ? "直接输出 mcp-proxy 原始配置"
-                        : "目标存放路径："}
-                    </p>
-                    
-                    {/* 平台选择器 */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowPlatformSelector(!showPlatformSelector)}
-                        className={`flex items-center gap-1.5 text-xs font-medium border rounded-lg px-2 py-1 cursor-pointer transition-all ${
-                          theme === "dark"
-                            ? "bg-white/5 border-white/10 text-gray-400 hover:border-violet-500/30 hover:text-violet-300"
-                            : "bg-gray-50 border-gray-200 text-gray-600 hover:border-violet-300 hover:text-violet-600"
-                        }`}
-                      >
-                        <MonitorSmartphone className="w-3.5 h-3.5" />
-                        <span>{getPlatformLabel(selectedPlatform)}</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showPlatformSelector ? "rotate-180" : ""}`} />
-                      </button>
-                      
-                      {/* 下拉菜单 */}
-                      {showPlatformSelector && (
-                        <div className={`absolute top-full right-0 mt-1 rounded-xl shadow-lg z-50 border min-w-[120px] ${
-                          theme === "dark"
-                            ? "bg-gray-900 border-white/10"
-                            : "bg-white border-gray-200"
-                        }`}>
-                          {(['windows', 'macos', 'linux'] as Platform[]).map((platform) => (
-                            <button
-                              key={platform}
-                              onClick={() => {
-                                setSelectedPlatform(platform);
-                                setShowPlatformSelector(false);
-                              }}
-                              className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
-                                selectedPlatform === platform
-                                  ? (theme === "dark" ? "bg-violet-500/20 text-violet-300" : "bg-violet-50 text-violet-700")
-                                  : (theme === "dark" ? "text-gray-400 hover:bg-white/5" : "text-gray-600 hover:bg-gray-50")
-                              }`}
-                            >
-                              {getPlatformLabel(platform)}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+        <div className="lg:col-span-7 space-y-3">
+          {/* 元数据栏 */}
+          <div className="glass rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-5 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>输出格式</span>
+                <span className={`mono font-medium ${theme === "dark" ? "text-white" : "text-gray-800"}`}>{selectedClientDef.configPaths && selectedClientDef.configPaths[selectedPlatform] ? selectedClientDef.configPaths[selectedPlatform].split("/").pop() : `${selectedClient}.json`}</span>
+              </div>
+              <div className="w-px h-4 bg-white/10"></div>
+              <div className="flex items-center gap-1.5">
+                <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>平台</span>
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowPlatformSelector(!showPlatformSelector); }}
+                    className={`mono font-medium flex items-center gap-1 cursor-pointer ${theme === "dark" ? "text-white hover:text-violet-300" : "text-gray-800 hover:text-violet-600"}`}
+                  >
+                    {getPlatformLabel(selectedPlatform)}
+                    <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showPlatformSelector ? "rotate-180" : ""}`} />
+                  </button>
+                  {showPlatformSelector && (
+                    <div className={`absolute top-full left-0 mt-1 rounded-lg shadow-lg z-50 border min-w-[90px] ${theme === "dark" ? "bg-gray-900 border-white/10" : "bg-white border-gray-200"}`}>
+                      {(['windows', 'macos', 'linux'] as Platform[]).map((platform) => (
+                        <button
+                          key={platform}
+                          onClick={() => { setSelectedPlatform(platform); setShowPlatformSelector(false); }}
+                          className={`w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${selectedPlatform === platform ? (theme === "dark" ? "bg-violet-500/20 text-violet-300" : "bg-violet-50 text-violet-700") : (theme === "dark" ? "text-gray-400 hover:bg-white/5" : "text-gray-600 hover:bg-gray-50")}`}
+                        >
+                          {getPlatformLabel(platform)}
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                  
-                  <p className={`text-xs mt-1 font-mono ${theme === "dark" ? "text-gray-600" : "text-gray-500"}`}>
-                    {currentConfigPath}
-                  </p>
+                  )}
                 </div>
               </div>
+              <div className="w-px h-4 bg-white/10"></div>
+              <div className="flex items-center gap-1.5">
+                <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>路径</span>
+                <span className={`mono text-[10px] font-medium ${theme === "dark" ? "text-white" : "text-gray-800"}`}>{currentConfigPath}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`h-8 px-3 rounded-lg text-[12px] flex items-center gap-1.5 cursor-pointer transition-all ${theme === "dark" ? "glass-strong text-violet-200/80 hover:text-white" : "bg-gray-100 text-gray-600 hover:text-gray-800"}`}>
+                <Download className="w-3.5 h-3.5" />
+                <span>下载</span>
+              </button>
               <button
                 onClick={() => handleCopy(currentOutput, selectedClient)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-sm font-semibold cursor-pointer transition-all duration-300 ${theme === "dark" ? "bg-white/5 border-white/10 text-gray-300 hover:text-white" : "bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-800"}`}
+                className="btn-glow h-8 px-4 rounded-lg text-white text-[12px] font-semibold flex items-center gap-1.5 cursor-pointer"
               >
                 {copiedType === selectedClient ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    <Check className="w-3.5 h-3.5" />
                     <span>已复制</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>复制配置</span>
+                    <span>复制</span>
                   </>
                 )}
               </button>
             </div>
+          </div>
+
+          {/* 代码区 */}
+          <div className="glass rounded-2xl overflow-hidden code-glow">
+            <div className="flex items-center justify-between px-5 h-11 border-b border-white/5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-rose-400/60"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/60"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/60"></div>
+                </div>
+                <div className="w-px h-4 bg-white/10 mx-1"></div>
+                <span className={`mono text-[12px] ${theme === "dark" ? "text-white" : "text-gray-800"}`}>
+                  {selectedClientDef.configPaths && selectedClientDef.configPaths[selectedPlatform] ? selectedClientDef.configPaths[selectedPlatform].split("/").pop() : `${selectedClient}.json`}
+                </span>
+              </div>
+              <div className={`flex items-center gap-3 text-[10px] mono ${theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}`}>
+                <span>{formattedOutput ? `${formattedOutput.split("\n").length} 行` : "0 行"}</span>
+                <span>·</span>
+                <span>{formattedOutput ? `${(new Blob([formattedOutput]).size / 1024).toFixed(1)} KB` : "0 KB"}</span>
+                <span>·</span>
+                <span className="text-emerald-400">JSON valid</span>
+              </div>
+            </div>
+
             <textarea
               readOnly
               value={currentOutput}
-              className={`flex-1 border rounded-2xl p-4 text-sm font-mono resize-none overflow-y-auto leading-relaxed focus:outline-none ${theme === "dark" ? "bg-black/40 border-white/5 text-gray-300 placeholder-gray-500" : "bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400"}`}
+              className={`w-full p-6 text-[12.5px] leading-[1.8] font-mono resize-none overflow-y-auto focus:outline-none border-0 ${theme === "dark" ? "bg-transparent text-gray-300" : "bg-transparent text-gray-800"}`}
               placeholder="勾选左侧服务器并选择上方客户端选项卡，自动生成输出..."
+              style={{ height: "400px" }}
             />
+          </div>
+
+          {/* 操作指引 */}
+          <div className={`glass rounded-2xl p-4 flex items-start gap-3 relative overflow-hidden ${theme === "dark" ? "" : "border-gray-200"}`}>
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-violet-400 to-indigo-500"></div>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-400/30 flex items-center justify-center shrink-0">
+              <HelpCircle className="w-4 h-4 text-violet-400" />
+            </div>
+            <div className={`text-[12px] leading-relaxed flex-1 ${theme === "dark" ? "text-violet-200/70" : "text-violet-700/70"}`}>
+              <div className={`font-medium mb-1 ${theme === "dark" ? "text-white" : "text-gray-800"}`}>下一步操作</div>
+              将上述 JSON 复制到 <span className={`mono px-1.5 py-0.5 rounded ${theme === "dark" ? "text-violet-300 bg-white/5" : "text-violet-600 bg-gray-100"}`}>{currentConfigPath}</span> 后重启 {selectedClientDef.name} 即可生效。
+            </div>
           </div>
         </div>
       </div>
