@@ -1,0 +1,13 @@
+{
+  "_comment": "通过 Server-Sent Events (SSE) 连接的 MCP 服务，url 必填",
+  "mcpServers": {
+    "jules": {
+      "transportType": "sse",
+      "url": "${JULES_MCP_URL}"
+    },
+    "douyin": {
+      "transportType": "sse",
+      "url": "${DOUYIN_MCP_URL}"
+    }
+  }
+}

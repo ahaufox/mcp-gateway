@@ -1,0 +1,4 @@
+{
+  "_comment": "通过 WebSocket 连接的 MCP 服务占位文件，暂无服务时保留空对象",
+  "mcpServers": {}
+}

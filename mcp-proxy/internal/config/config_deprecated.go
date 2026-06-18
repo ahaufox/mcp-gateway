@@ -53,6 +53,9 @@ func parseMCPClientConfigV1(conf *MCPClientConfigV1) (any, error) {
 }
 
 func adaptMCPClientConfigV1ToV2(conf *FullConfig) {
+	if conf.DeprecatedServerV1 == nil && len(conf.DeprecatedClientsV1) == 0 {
+		return
+	}
 	log.Printf("WARNING: V1 config format is deprecated, please migrate to V2")
 	if conf.DeprecatedServerV1 != nil && conf.McpProxy == nil {
 		v1 := conf.DeprecatedServerV1

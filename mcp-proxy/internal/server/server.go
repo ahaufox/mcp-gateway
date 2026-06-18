@@ -96,6 +96,16 @@ func recoverMiddleware(prefix string) MiddlewareFunc {
 }
 
 func StartHTTPServer(cfg *config.Config, configPath string) error {
+	return StartHTTPServerWithConfigSource(cfg, configPath, nil)
+}
+
+// StartHTTPServerWithConfigSource is the more capable form of StartHTTPServer.
+// When configSource is non-nil, the /api/config endpoint serves the bytes
+// returned by it (typically the in-memory merged view produced by LoadDir)
+// instead of reading configPath from disk. This lets the dashboard show the
+// final merged config even when the user opts into split-config mode where no
+// single file on disk represents the effective configuration.
+func StartHTTPServerWithConfigSource(cfg *config.Config, configPath string, configSource func() ([]byte, error)) error {
 	baseURL, uErr := url.Parse(cfg.McpProxy.BaseURL)
 	if uErr != nil {
 		return uErr
@@ -216,9 +226,13 @@ func StartHTTPServer(cfg *config.Config, configPath string) error {
 
 	httpMux.HandleFunc("/api/config", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("DEBUG: Hit /api/config handler")
-		var content []byte
-		var err error
-		if config.IsRemoteURL(configPath) {
+		var (
+			content []byte
+			err     error
+		)
+		if configSource != nil {
+			content, err = configSource()
+		} else if config.IsRemoteURL(configPath) {
 			// 如果是远程 URL，通过 http 获取
 			resp, httpErr := http.Get(configPath)
 			if httpErr != nil {

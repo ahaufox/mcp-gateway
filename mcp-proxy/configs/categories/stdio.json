@@ -1,0 +1,101 @@
+{
+  "_comment": "通过 stdio (subprocess) 启动的 MCP 服务，command / args / env 必填",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "options": {
+        "toolFilter": {
+          "mode": "block",
+          "list": [
+            "create_or_update_file",
+            "create_repository",
+            "fork_repository",
+            "search_users",
+            "search_repositories",
+            "add_issue_comment",
+            "create_issue",
+            "get_pull_request_status",
+            "get_pull_request_reviews"
+          ]
+        }
+      }
+    },
+    "chart": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@antv/mcp-server-chart"
+      ]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "options": {
+        "panicIfInvalid": true,
+        "logEnabled": false
+      }
+    },
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ${NOTION_API_KEY}\", \"Notion-Version\": \"2022-06-28\"}"
+      },
+      "options": {
+        "disabled": false
+      }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "options": {
+        "logEnabled": false
+      }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "options": {
+        "logEnabled": false
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "options": {
+        "logEnabled": false
+      }
+    },
+    "reactbits": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "reactbits-dev-mcp-server"
+      ],
+      "options": {
+        "logEnabled": false
+      }
+    }
+  }
+}
