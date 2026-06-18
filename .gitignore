@@ -13,6 +13,11 @@ mcp-proxy/mcp-gateway
 # Dependency directories
 vendor/
 
+# Node.js (root-level markdownlint / husky / lint-staged)
+node_modules/
+package-lock.json
+.husky/_/
+
 # IDE and Editor directories
 .idea/
 .vscode/
