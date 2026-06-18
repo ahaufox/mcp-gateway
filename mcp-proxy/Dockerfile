@@ -37,5 +37,7 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
 
 COPY --from=builder /app/build/mcp-proxy /main
 COPY --from=builder /app/docs /docs
+WORKDIR /config
 ENTRYPOINT ["/main"]
-CMD ["--config", "/config/config.json"]
+# 默认从拆分后的 configs/ 目录加载；可通过 --config 参数回退到单文件模式。
+CMD ["--config-dir", "/config/configs"]

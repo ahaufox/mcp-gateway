@@ -5,7 +5,8 @@ services:
       context: .
       dockerfile: mcp-proxy/Dockerfile
     volumes:
-      - ./mcp-proxy/config.json:/config/config.json
+      # 拆分后的多文件配置: base.json + categories/*.json + overrides/*.json
+      - ./mcp-proxy/configs:/config/configs
     ports:
       - "9090:9090"
     restart: always

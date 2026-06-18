@@ -143,3 +143,5 @@ fabric.properties
 /dist
 config_prod.json
 .env
+# 个人/敏感覆盖配置，不入库
+configs/overrides/*.json

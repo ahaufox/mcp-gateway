@@ -40,5 +40,10 @@ Issues = "https://github.com/yzfly/douyin-mcp-server/issues"
 [project.scripts]
 douyin-mcp = "server:main"
 
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+no_implicit_optional = true
+ignore_missing_imports = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["."]
