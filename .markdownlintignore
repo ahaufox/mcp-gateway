@@ -1,0 +1,48 @@
+# 依赖与构建产物
+node_modules/
+**/node_modules/
+**/build/
+**/dist/
+**/out/
+**/vendor/
+
+# 版本控制
+.git/
+**/.git/
+
+# 自动生成的 markdown
+**/CHANGELOG.md
+**/CHANGES.md
+
+# 前端构建产物
+mcp-proxy/internal/server/frontend/dist/
+web/dist/
+
+# 下载/媒体目录
+downloads/
+**/downloads/
+
+# 子模块内部文档（保留主项目校验）
+PyMCPAutoGUI/docs/
+jules-mcp-server/docs/
+mcp-server-chart/README.md
+mcp-server-chart/CHANGELOG.md
+douyin-mcp/README.md
+
+# 内部规则文档（避免与 markdownlint 规则冲突）
+.agents/rules/**/*.md
+**/.agent/rules/**/*.md
+**/.claude/rules/**/*.md
+**/.cursor/rules/**/*.md
+**/.windsurf/rules/**/*.md
+**/.lingma/rules/**/*.md
+**/.opencode/**/*.md
+**/.trae/**/*.md
+**/.continue/**/*.md
+**/.github/AGENTS.md
+**/.github/copilot-instructions.md
+**/CLAUDE.md
+**/.aider.instructions.md
+**/.clinerules*
+**/.windsurfrules
+**/.roorules
