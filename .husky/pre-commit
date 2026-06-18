@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# 仓库级 pre-commit 钩子：仅校验本次提交暂存区中的 .md 文件
+# 由 husky v9 在 `npm install` (触发 prepare 脚本) 时自动配置到 .git/hooks/
+
+npx --no-install lint-staged
