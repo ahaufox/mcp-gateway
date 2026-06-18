@@ -297,10 +297,12 @@ class DouyinProcessor:
                         return result['transcripts'][0]['text']
                     else:
                         return "未识别到文本内容"
-                        
+
+                return "未识别到文本内容"
+
             else:
                 raise Exception(f"转录失败: {transcription_response.output.message}")
-                
+
         except Exception as e:
             raise Exception(f"提取文字时出错: {str(e)}")
     
@@ -414,7 +416,7 @@ def get_douyin_download_link(share_link: str) -> VideoDownloadInfo:
 async def download_video(
     share_link: str,
     save_path: Optional[str] = None,
-    ctx: Context = None
+    ctx: Optional[Context] = None
 ) -> DownloadResult:
     """
     下载抖音无水印视频到本地
@@ -429,7 +431,8 @@ async def download_video(
     try:
         # 获取下载链接不需要API密钥
         processor = DouyinProcessor("")
-        
+        assert ctx is not None, "ctx 不能为空"
+
         await ctx.info("正在解析抖音分享链接...")
         video_info = processor.parse_share_url(share_link)
         
@@ -491,7 +494,7 @@ async def extract_audio(
     share_link: Optional[str] = None,
     video_path: Optional[str] = None,
     save_path: Optional[str] = None,
-    ctx: Context = None
+    ctx: Optional[Context] = None
 ) -> AudioResult:
     """
     从抖音视频中提取音频 (MP3)
@@ -509,6 +512,7 @@ async def extract_audio(
             raise ValueError("必须提供 share_link 或 video_path 其中之一")
 
         processor = DouyinProcessor("")
+        assert ctx is not None, "ctx 不能为空"
         import shutil
         current_dir = Path.cwd()
         downloads_dir = current_dir / "downloads"
@@ -523,6 +527,7 @@ async def extract_audio(
             title = video_info['title']
             final_video_path = await processor.download_video(video_info, ctx)
         else:
+            assert video_path is not None, "video_path 不能为空"
             final_video_path = Path(video_path)
             if not final_video_path.exists():
                 raise FileNotFoundError(f"未找到视频文件: {video_path}")
@@ -571,7 +576,7 @@ async def extract_audio(
 async def extract_douyin_text(
     share_link: str,
     model: Optional[str] = None,
-    ctx: Context = None
+    ctx: Optional[Context] = None
 ) -> TextExtractionResult:
     """
     从抖音分享链接提取视频中的文本内容
@@ -590,9 +595,10 @@ async def extract_douyin_text(
         api_key = os.getenv('API_KEY')
         if not api_key:
             raise ValueError("未设置环境变量 API_KEY，请在配置中添加阿里云百炼API密钥")
-        
+
         processor = DouyinProcessor(api_key, model)
-        
+        assert ctx is not None, "ctx 不能为空"
+
         # 解析视频链接
         await ctx.info("正在解析抖音分享链接...")
         video_info = processor.parse_share_url(share_link)
@@ -620,7 +626,7 @@ async def extract_douyin_text(
 @mcp.tool()
 async def download_album(
     share_link: str,
-    ctx: Context = None
+    ctx: Optional[Context] = None
 ) -> AlbumDownloadResult:
     """
     下载抖音图文作品（所有原图）
@@ -633,13 +639,13 @@ async def download_album(
     """
     try:
         processor = DouyinProcessor("")
-        if ctx:
-            await ctx.info("正在解析图集信息...")
+        assert ctx is not None, "ctx 不能为空"
+        await ctx.info("正在解析图集信息...")
         video_info = processor.parse_share_url(share_link)
-        
+
         if not video_info.get("is_album"):
              raise ValueError("该链接指向的不是图文作品")
-             
+
         saved_paths = await processor.download_album(video_info, ctx)
         
         return AlbumDownloadResult(
