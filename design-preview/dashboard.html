@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard · MCP Gateway</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  body {
+    background:
+      radial-gradient(ellipse 1000px 800px at 80% 0%, rgba(139, 92, 246, 0.07), transparent 70%),
+      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(59, 130, 246, 0.06), transparent 70%),
+      radial-gradient(ellipse 600px 600px at 50% 50%, rgba(168, 85, 247, 0.04), transparent 80%),
+      linear-gradient(180deg, #080316 0%, #0C0720 50%, #080418 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #F5F3FF;
+  }
+
+  .orb {
+    position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.2;
+    animation: float 15s ease-in-out infinite;
+  }
+  .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #6366F1 0%, transparent 70%); top: -150px; right: -150px; }
+  .orb-2 { width: 600px; height: 600px; background: radial-gradient(circle, #A855F7 0%, transparent 70%); top: 40%; left: -200px; animation-delay: -5s; }
+  @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px, -30px) scale(1.1); } }
+
+  .glass {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 20px 60px -10px rgba(0, 0, 0, 0.4);
+  }
+  .glass-strong {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .text-gradient { background: linear-gradient(135deg, #FFFFFF 0%, #C4B5FD 50%, #A78BFA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .text-gradient-warm { background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .text-gradient-cool { background: linear-gradient(135deg, #67E8F9 0%, #3B82F6 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .text-gradient-success { background: linear-gradient(135deg, #6EE7B7 0%, #10B981 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+  /* Nav item */
+  .nav-item { transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+  .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #FFFFFF; }
+  .nav-item.active { background: linear-gradient(90deg, rgba(139, 92, 246, 0.20), rgba(99, 102, 241, 0.05)); color: #FFFFFF; }
+  .nav-item.active::before { content:''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; background: linear-gradient(180deg, #A78BFA, #6366F1); border-radius: 0 2px 2px 0; box-shadow: 0 0 12px #A78BFA; }
+
+  /* 状态点 */
+  .pulse-dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.3); } }
+
+  /* 折线图 */
+  .chart-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .chart-fill { animation: fadeIn 1.5s ease-out 0.5s both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* 进度环 */
+  .progress-ring-circle { transition: stroke-dashoffset 1s ease-out; transform: rotate(-90deg); transform-origin: 50% 50%; }
+
+  /* 悬浮 */
+  .hover-lift { transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms; }
+  .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.3) inset, 0 30px 60px -10px rgba(99, 102, 241, 0.3); }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="flex min-h-screen relative z-10">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="w-64 glass border-r border-white/5 shrink-0 sticky top-0 h-screen flex flex-col">
+
+      <!-- Logo -->
+      <div class="h-16 px-5 flex items-center gap-3 border-b border-white/5">
+        <div class="relative w-9 h-9">
+          <div class="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl blur-md opacity-60"></div>
+          <div class="relative w-full h-full bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
+            <span class="mono text-white text-[14px] font-bold">M</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-[14px] font-semibold text-white tracking-tight">mcp-proxy</div>
+          <div class="mono text-[10px] text-violet-300/60">v1.0.0</div>
+        </div>
+      </div>
+
+      <!-- 导航 -->
+      <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 px-3 py-2 mt-2">主导航</div>
+        <a href="#" class="nav-item active flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-white no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="font-medium">监控面板</span>
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span>配置转换</span>
+        </a>
+        <a href="#" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>更新日志</span>
+        </a>
+
+        <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 px-3 py-2 mt-6">系统</div>
+        <a href="#" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>设置</span>
+        </a>
+      </nav>
+
+      <!-- 底部状态卡 -->
+      <div class="m-3 p-3 glass-strong rounded-xl">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot shadow-lg shadow-emerald-400/60"></div>
+          <span class="text-[11px] text-white font-medium">代理运行正常</span>
+        </div>
+        <div class="space-y-1 text-[10px] text-violet-200/50 mono">
+          <div class="flex justify-between"><span>Uptime</span><span class="text-violet-200/80">14d 06h</span></div>
+          <div class="flex justify-between"><span>端口</span><span class="text-violet-200/80">:8000</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="flex-1 min-w-0">
+
+      <!-- Topbar -->
+      <header class="h-16 px-8 flex items-center justify-between border-b border-white/5 glass">
+        <div class="flex items-center gap-6">
+          <div>
+            <h1 class="text-[20px] font-semibold text-gradient tracking-tight">监控面板</h1>
+            <p class="text-[11px] text-violet-200/50">实时 MCP 服务健康状态</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-300/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="搜索..." class="input-vp h-9 w-56 pl-9 pr-3 rounded-lg text-[12px] text-white placeholder-violet-300/30" />
+          </div>
+          <button class="w-9 h-9 glass rounded-lg flex items-center justify-center text-violet-200/70 hover:text-white transition-colors">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </button>
+          <div class="w-px h-6 bg-white/10"></div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-[11px] font-semibold">A</div>
+            <div class="text-[11px]">
+              <div class="text-white font-medium">admin</div>
+              <div class="text-violet-300/50">超级管理员</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-8 space-y-6">
+
+        <!-- ===== 指标卡片 (4个) ===== -->
+        <section class="grid grid-cols-4 gap-4">
+
+          <!-- 总服务器 -->
+          <div class="glass hover-lift rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-violet-500/20 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-400/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                </div>
+                <span class="mono text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+2</span>
+              </div>
+              <div class="mono text-[32px] font-bold text-gradient leading-none mb-1">8</div>
+              <div class="text-[12px] text-violet-200/60">注册服务器</div>
+            </div>
+          </div>
+
+          <!-- 在线 -->
+          <div class="glass hover-lift rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-400/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot shadow-lg shadow-emerald-400/60"></div>
+                  <span class="mono text-[10px] text-emerald-300">LIVE</span>
+                </div>
+              </div>
+              <div class="mono text-[32px] font-bold text-gradient-success leading-none mb-1">7</div>
+              <div class="text-[12px] text-violet-200/60">在线服务</div>
+            </div>
+          </div>
+
+          <!-- 24h 调用 -->
+          <div class="glass hover-lift rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <span class="mono text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full">↑ 18.4%</span>
+              </div>
+              <div class="mono text-[32px] font-bold text-gradient-cool leading-none mb-1">12.4<span class="text-[18px] text-cyan-300/60">k</span></div>
+              <div class="text-[12px] text-violet-200/60">24h 调用</div>
+            </div>
+          </div>
+
+          <!-- 错误率 -->
+          <div class="glass hover-lift rounded-2xl p-5 relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-400/30 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <span class="mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">↓ 0.3%</span>
+              </div>
+              <div class="mono text-[32px] font-bold text-gradient-warm leading-none mb-1">0.42<span class="text-[18px] text-amber-300/60">%</span></div>
+              <div class="text-[12px] text-violet-200/60">错误率</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 主区：左图 + 右侧服务器 ===== -->
+        <section class="grid grid-cols-3 gap-4">
+
+          <!-- 折线图 -->
+          <div class="col-span-2 glass rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-[15px] font-semibold text-white mb-0.5">调用趋势</h2>
+                <p class="text-[11px] text-violet-200/50">最近 24 小时 · 5分钟粒度</p>
+              </div>
+              <div class="flex items-center gap-1 glass-strong p-0.5 rounded-lg">
+                <button class="px-3 h-7 text-[11px] rounded-md text-violet-200/50 hover:text-white transition-colors">1H</button>
+                <button class="px-3 h-7 text-[11px] rounded-md bg-violet-500/20 text-white font-medium">24H</button>
+                <button class="px-3 h-7 text-[11px] rounded-md text-violet-200/50 hover:text-white transition-colors">7D</button>
+                <button class="px-3 h-7 text-[11px] rounded-md text-violet-200/50 hover:text-white transition-colors">30D</button>
+              </div>
+            </div>
+
+            <!-- 图表 -->
+            <div class="relative h-56">
+              <svg class="w-full h-full" viewBox="0 0 800 220" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#A78BFA"/>
+                    <stop offset="50%" stop-color="#8B5CF6"/>
+                    <stop offset="100%" stop-color="#6366F1"/>
+                  </linearGradient>
+                  <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="lineGrad2" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#67E8F9"/>
+                    <stop offset="100%" stop-color="#3B82F6"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- 网格 -->
+                <g stroke="rgba(255,255,255,0.05)" stroke-width="1">
+                  <line x1="0" y1="55" x2="800" y2="55"/>
+                  <line x1="0" y1="110" x2="800" y2="110"/>
+                  <line x1="0" y1="165" x2="800" y2="165"/>
+                </g>
+
+                <!-- 填充区 -->
+                <path class="chart-fill" d="M 0 130 L 50 110 L 100 140 L 150 90 L 200 100 L 250 60 L 300 80 L 350 50 L 400 70 L 450 30 L 500 60 L 550 40 L 600 70 L 650 50 L 700 80 L 750 60 L 800 90 L 800 220 L 0 220 Z" fill="url(#fillGrad)"/>
+
+                <!-- 主线 -->
+                <path class="chart-line" d="M 0 130 L 50 110 L 100 140 L 150 90 L 200 100 L 250 60 L 300 80 L 350 50 L 400 70 L 450 30 L 500 60 L 550 40 L 600 70 L 650 50 L 700 80 L 750 60 L 800 90" fill="none" stroke="url(#lineGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 8px #8B5CF6);"/>
+
+                <!-- 副线 -->
+                <path class="chart-line" d="M 0 160 L 50 170 L 100 150 L 150 165 L 200 140 L 250 155 L 300 130 L 350 145 L 400 120 L 450 140 L 500 115 L 550 130 L 600 110 L 650 125 L 700 105 L 750 120 L 800 110" fill="none" stroke="url(#lineGrad2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4" opacity="0.7"/>
+
+                <!-- 焦点 -->
+                <circle cx="450" cy="30" r="5" fill="#A78BFA" opacity="0.3"/>
+                <circle cx="450" cy="30" r="3" fill="#A78BFA"/>
+              </svg>
+            </div>
+
+            <!-- 图例 -->
+            <div class="flex items-center gap-6 mt-4 text-[11px]">
+              <div class="flex items-center gap-2"><div class="w-3 h-0.5 bg-gradient-to-r from-violet-400 to-indigo-400 rounded"></div><span class="text-violet-200/70">请求数</span></div>
+              <div class="flex items-center gap-2"><div class="w-3 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-400 rounded" style="border-top: 1.5px dashed; height: 0;"></div><span class="text-violet-200/70">错误数</span></div>
+            </div>
+          </div>
+
+          <!-- 协议分布 -->
+          <div class="glass rounded-2xl p-6">
+            <div class="mb-6">
+              <h2 class="text-[15px] font-semibold text-white mb-0.5">传输协议</h2>
+              <p class="text-[11px] text-violet-200/50">服务器分布</p>
+            </div>
+
+            <div class="flex items-center justify-center my-4">
+              <svg class="w-40 h-40" viewBox="0 0 100 100">
+                <defs>
+                  <linearGradient id="sseGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#6366F1"/>
+                  </linearGradient>
+                  <linearGradient id="httpGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#67E8F9"/><stop offset="100%" stop-color="#3B82F6"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="14"/>
+                <circle class="progress-ring-circle" cx="50" cy="50" r="35" fill="none" stroke="url(#sseGrad)" stroke-width="14" stroke-dasharray="220 220" stroke-dashoffset="66" stroke-linecap="round" style="filter: drop-shadow(0 0 6px #8B5CF6);"/>
+                <circle class="progress-ring-circle" cx="50" cy="50" r="35" fill="none" stroke="url(#httpGrad)" stroke-width="14" stroke-dasharray="220 220" stroke-dashoffset="176" stroke-linecap="round" transform="rotate(252 50 50)"/>
+              </svg>
+            </div>
+
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between text-[12px]">
+                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-violet-400"></div><span class="text-violet-200/80">SSE</span></div>
+                <span class="mono text-white font-semibold">5</span>
+              </div>
+              <div class="flex items-center justify-between text-[12px]">
+                <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-cyan-400"></div><span class="text-violet-200/80">Streamable HTTP</span></div>
+                <span class="mono text-white font-semibold">3</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== 服务器列表 ===== -->
+        <section class="glass rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-[15px] font-semibold text-white mb-0.5">MCP 服务器</h2>
+              <p class="text-[11px] text-violet-200/50">8 个注册 · 7 个在线</p>
+            </div>
+            <button class="text-[12px] text-violet-300 hover:text-white transition-colors flex items-center gap-1">
+              <span>查看全部</span>
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <!-- row -->
+            <div class="glass-subtle hover-lift rounded-xl p-4 flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/30 to-indigo-500/30 border border-violet-400/30 flex items-center justify-center text-[14px] font-bold text-white">J</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-[13px] font-semibold text-white">jules</span>
+                  <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 uppercase tracking-wider">SSE</span>
+                </div>
+                <div class="text-[11px] text-violet-200/50 mono truncate">http://localhost:8000/jules/sse</div>
+              </div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-white font-semibold">3,421</div>
+                <div class="text-[10px] text-violet-200/40">24h calls</div>
+              </div>
+              <div class="w-px h-8 bg-white/10"></div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-emerald-300 font-semibold">42ms</div>
+                <div class="text-[10px] text-violet-200/40">avg latency</div>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></div>
+                <span class="text-[10px] text-emerald-300 font-medium uppercase tracking-wider">Online</span>
+              </div>
+            </div>
+
+            <div class="glass-subtle hover-lift rounded-xl p-4 flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/30 to-rose-500/30 border border-pink-400/30 flex items-center justify-center text-[14px] font-bold text-white">D</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-[13px] font-semibold text-white">douyin</span>
+                  <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 uppercase tracking-wider">SSE</span>
+                </div>
+                <div class="text-[11px] text-violet-200/50 mono truncate">http://localhost:8000/douyin/sse</div>
+              </div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-white font-semibold">1,892</div>
+                <div class="text-[10px] text-violet-200/40">24h calls</div>
+              </div>
+              <div class="w-px h-8 bg-white/10"></div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-emerald-300 font-semibold">68ms</div>
+                <div class="text-[10px] text-violet-200/40">avg latency</div>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></div>
+                <span class="text-[10px] text-emerald-300 font-medium uppercase tracking-wider">Online</span>
+              </div>
+            </div>
+
+            <div class="glass-subtle hover-lift rounded-xl p-4 flex items-center gap-4">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-500/30 border border-cyan-400/30 flex items-center justify-center text-[14px] font-bold text-white">S</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-[13px] font-semibold text-white">stitch</span>
+                  <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 uppercase tracking-wider">Streamable</span>
+                </div>
+                <div class="text-[11px] text-violet-200/50 mono truncate">https://stitch.googleapis.com/mcp</div>
+              </div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-white font-semibold">2,156</div>
+                <div class="text-[10px] text-violet-200/40">24h calls</div>
+              </div>
+              <div class="w-px h-8 bg-white/10"></div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-amber-300 font-semibold">128ms</div>
+                <div class="text-[10px] text-violet-200/40">avg latency</div>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-400/30">
+                <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                <span class="text-[10px] text-amber-300 font-medium uppercase tracking-wider">Degraded</span>
+              </div>
+            </div>
+
+            <div class="glass-subtle hover-lift rounded-xl p-4 flex items-center gap-4 opacity-60">
+              <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[14px] font-bold text-white/40">N</div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-[13px] font-semibold text-white/80">notion</span>
+                  <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-white/40 uppercase tracking-wider">HTTP</span>
+                </div>
+                <div class="text-[11px] text-violet-200/30 mono truncate">http://localhost:8000/notion/sse</div>
+              </div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-white/40 font-semibold">0</div>
+                <div class="text-[10px] text-violet-200/30">24h calls</div>
+              </div>
+              <div class="w-px h-8 bg-white/10"></div>
+              <div class="text-right">
+                <div class="mono text-[13px] text-white/40 font-semibold">—</div>
+                <div class="text-[10px] text-violet-200/30">avg latency</div>
+              </div>
+              <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
+                <div class="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                <span class="text-[10px] text-white/50 font-medium uppercase tracking-wider">Offline</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>

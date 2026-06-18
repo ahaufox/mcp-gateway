@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Converter · MCP Gateway</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  * { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  body {
+    background:
+      radial-gradient(ellipse 1000px 800px at 80% 0%, rgba(139, 92, 246, 0.07), transparent 70%),
+      radial-gradient(ellipse 800px 600px at 0% 100%, rgba(59, 130, 246, 0.06), transparent 70%),
+      radial-gradient(ellipse 600px 600px at 50% 50%, rgba(168, 85, 247, 0.04), transparent 80%),
+      linear-gradient(180deg, #080316 0%, #0C0720 50%, #080418 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #F5F3FF;
+  }
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: 0.2; animation: float 15s ease-in-out infinite; }
+  .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #6366F1 0%, transparent 70%); top: -150px; right: -150px; }
+  .orb-2 { width: 600px; height: 600px; background: radial-gradient(circle, #A855F7 0%, transparent 70%); top: 40%; left: -200px; animation-delay: -5s; }
+  @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px, -30px) scale(1.1); } }
+
+  .glass { background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%); backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.10); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 20px 60px -10px rgba(0, 0, 0, 0.4); }
+  .glass-strong { background: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%); backdrop-filter: blur(40px) saturate(200%); -webkit-backdrop-filter: blur(40px) saturate(200%); border: 1px solid rgba(255, 255, 255, 0.14); }
+  .text-gradient { background: linear-gradient(135deg, #FFFFFF 0%, #C4B5FD 50%, #A78BFA 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .nav-item { transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+  .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #FFFFFF; }
+  .nav-item.active { background: linear-gradient(90deg, rgba(139, 92, 246, 0.20), rgba(99, 102, 241, 0.05)); color: #FFFFFF; }
+  .nav-item.active::before { content:''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; background: linear-gradient(180deg, #A78BFA, #6366F1); border-radius: 0 2px 2px 0; box-shadow: 0 0 12px #A78BFA; }
+  .input-vp { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 200ms; }
+  .input-vp:focus { background: rgba(255, 255, 255, 0.06); border-color: rgba(167, 139, 250, 0.5); box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.1), 0 0 20px rgba(167, 139, 250, 0.2); outline: none; }
+  .btn-vp { background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 8px 24px -4px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3); transition: all 200ms; }
+  .btn-vp:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) inset, 0 12px 32px -4px rgba(99, 102, 241, 0.6), 0 0 60px rgba(139, 92, 246, 0.5); }
+  .pill { transition: all 150ms; }
+  .pill:hover { border-color: rgba(255, 255, 255, 0.20); color: #FFFFFF; }
+  .pill.active { background: linear-gradient(135deg, rgba(139, 92, 246, 0.30), rgba(99, 102, 241, 0.20)); border-color: rgba(167, 139, 250, 0.5); color: #FFFFFF; box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  .hover-lift { transition: transform 200ms, box-shadow 200ms; }
+  .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.3) inset, 0 30px 60px -10px rgba(99, 102, 241, 0.3); }
+  .pulse-dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.3); } }
+  .code-glow { box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3), 0 0 60px -10px rgba(139, 92, 246, 0.4); }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="flex min-h-screen relative z-10">
+
+    <!-- Sidebar (与 Dashboard 一致) -->
+    <aside class="w-64 glass border-r border-white/5 shrink-0 sticky top-0 h-screen flex flex-col">
+      <div class="h-16 px-5 flex items-center gap-3 border-b border-white/5">
+        <div class="relative w-9 h-9">
+          <div class="absolute inset-0 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl blur-md opacity-60"></div>
+          <div class="relative w-full h-full bg-gradient-to-br from-violet-500 to-indigo-600 rounded-xl flex items-center justify-center">
+            <span class="mono text-white text-[14px] font-bold">M</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-[14px] font-semibold text-white tracking-tight">mcp-proxy</div>
+          <div class="mono text-[10px] text-violet-300/60">v1.0.0</div>
+        </div>
+      </div>
+      <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 px-3 py-2 mt-2">主导航</div>
+        <a href="./dashboard.html" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>监控面板</span>
+        </a>
+        <a href="#" class="nav-item active flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-white no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          <span class="font-medium">配置转换</span>
+        </a>
+        <a href="./changelog.html" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>更新日志</span>
+        </a>
+        <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 px-3 py-2 mt-6">系统</div>
+        <a href="#" class="nav-item flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-[13px] text-violet-200/60 no-underline">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>设置</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 min-w-0">
+      <header class="h-16 px-8 flex items-center justify-between border-b border-white/5 glass">
+        <div>
+          <h1 class="text-[20px] font-semibold text-gradient tracking-tight">配置格式转换器</h1>
+          <p class="text-[11px] text-violet-200/50">将当前代理配置转换为各 IDE、终端、AI 平台兼容的格式</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1.5 h-9 px-3 glass-strong rounded-lg">
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></div>
+            <span class="text-[12px] text-white">实时预览</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="p-8">
+        <div class="grid grid-cols-12 gap-4">
+
+          <!-- ===== 左：控制面板 ===== -->
+          <aside class="col-span-4 space-y-4">
+
+            <!-- 客户端 -->
+            <section class="glass rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-[11px] font-semibold uppercase tracking-[0.15em] text-violet-300/70">目标客户端</h3>
+                <span class="mono text-[10px] text-violet-300/40">12</span>
+              </div>
+              <div class="relative mb-3">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-violet-300/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="搜索客户端..." class="input-vp w-full h-9 pl-9 pr-3 rounded-lg text-[12px] text-white placeholder-violet-300/30" />
+              </div>
+
+              <div class="mb-3">
+                <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 mb-2">IDE / 编辑器</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Claude</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">VS Code</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Cursor</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Zed</button>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 mb-2">终端 / CLI</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Continue</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Cline</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Aider</button>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.15em] text-violet-300/40 mb-2">AI 平台</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">Antigravity</button>
+                  <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">LangChain</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- 服务器 -->
+            <section class="glass rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-[11px] font-semibold uppercase tracking-[0.15em] text-violet-300/70">导出服务器</h3>
+                <div class="flex items-center gap-3">
+                  <button class="text-[10px] text-violet-300 hover:text-white uppercase tracking-[0.15em] font-semibold">全选</button>
+                  <button class="text-[10px] text-violet-300/50 hover:text-violet-200 uppercase tracking-[0.15em] font-semibold">清空</button>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">jules</button>
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">douyin</button>
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">stitch</button>
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">github</button>
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">fetch</button>
+                <button class="pill active h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">playwright</button>
+                <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">notion</button>
+                <button class="pill h-7 px-3 border border-white/10 rounded-lg text-[11px] text-violet-200/80">context7</button>
+              </div>
+              <div class="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+                <span class="text-[10px] text-violet-300/50 mono">已选 6 / 共 8</span>
+                <div class="flex-1 mx-3 h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div class="h-full w-3/4 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full" style="box-shadow: 0 0 10px #8B5CF6;"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Token -->
+            <section class="glass rounded-2xl p-5">
+              <h3 class="text-[11px] font-semibold uppercase tracking-[0.15em] text-violet-300/70 mb-3">覆盖 Token（可选）</h3>
+              <input type="text" placeholder="Bearer token..." class="input-vp w-full h-9 px-3 rounded-lg text-[12px] text-white placeholder-violet-300/30 mono" />
+              <p class="text-[10px] text-violet-300/40 mt-2 leading-relaxed">填入后所有导出服务器将统一使用此 Token</p>
+            </section>
+          </aside>
+
+          <!-- ===== 右：输出 ===== -->
+          <section class="col-span-8 space-y-3">
+
+            <!-- 元数据栏 -->
+            <div class="glass rounded-2xl p-4 flex items-center justify-between">
+              <div class="flex items-center gap-5 text-[11px]">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-violet-300/50">输出格式</span>
+                  <span class="mono text-white font-medium">claude_desktop_config.json</span>
+                </div>
+                <div class="w-px h-4 bg-white/10"></div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-violet-300/50">平台</span>
+                  <span class="mono text-white font-medium">macos</span>
+                </div>
+                <div class="w-px h-4 bg-white/10"></div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-violet-300/50">路径</span>
+                  <span class="mono text-white font-medium text-[10px]">~/Library/Application Support/Claude/</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="h-8 px-3 glass-strong rounded-lg text-[12px] text-violet-200/80 hover:text-white flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span>下载</span>
+                </button>
+                <button class="btn-vp h-8 px-4 rounded-lg text-white text-[12px] font-semibold flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  <span>复制</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 代码区 -->
+            <div class="glass rounded-2xl overflow-hidden code-glow">
+              <div class="flex items-center justify-between px-5 h-11 border-b border-white/5">
+                <div class="flex items-center gap-2.5">
+                  <div class="flex gap-1.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-rose-400/60"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-amber-400/60"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-400/60"></div>
+                  </div>
+                  <div class="w-px h-4 bg-white/10 mx-1"></div>
+                  <svg class="w-3.5 h-3.5 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  <span class="mono text-[12px] text-white">claude_desktop_config.json</span>
+                </div>
+                <div class="flex items-center gap-3 text-[10px] mono text-violet-300/50">
+                  <span>18 行</span><span>·</span><span>1.2 KB</span><span>·</span><span class="text-emerald-300">JSON valid</span>
+                </div>
+              </div>
+
+              <pre class="p-6 text-[12.5px] leading-[1.8] overflow-x-auto mono"><code><span style="color: #94A3B8;">{</span>
+  <span style="color: #67E8F9;">"mcpServers"</span><span style="color: #94A3B8;">: {</span>
+    <span style="color: #67E8F9;">"jules"</span><span style="color: #94A3B8;">: {</span>
+      <span style="color: #67E8F9;">"url"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"http://localhost:8000/jules/sse"</span><span style="color: #94A3B8;">,</span>
+      <span style="color: #67E8F9;">"transportType"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"sse"</span><span style="color: #94A3B8;">,</span>
+      <span style="color: #67E8F9;">"headers"</span><span style="color: #94A3B8;">: {</span>
+        <span style="color: #67E8F9;">"Authorization"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"Bearer ****"</span>
+      <span style="color: #94A3B8;">}</span>
+    <span style="color: #94A3B8;">},</span>
+    <span style="color: #67E8F9;">"douyin"</span><span style="color: #94A3B8;">: {</span>
+      <span style="color: #67E8F9;">"url"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"http://localhost:8000/douyin/sse"</span><span style="color: #94A3B8;">,</span>
+      <span style="color: #67E8F9;">"transportType"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"sse"</span>
+    <span style="color: #94A3B8;">},</span>
+    <span style="color: #67E8F9;">"stitch"</span><span style="color: #94A3B8;">: {</span>
+      <span style="color: #67E8F9;">"url"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"https://stitch.googleapis.com/mcp"</span><span style="color: #94A3B8;">,</span>
+      <span style="color: #67E8F9;">"transportType"</span><span style="color: #94A3B8;">: </span><span style="color: #6EE7B7;">"streamable-http"</span>
+    <span style="color: #94A3B8;">}</span>
+  <span style="color: #94A3B8;">}</span>
+<span style="color: #94A3B8;">}</span></code></pre>
+            </div>
+
+            <!-- 操作指引 -->
+            <div class="glass rounded-2xl p-4 flex items-start gap-3 relative overflow-hidden">
+              <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-violet-400 to-indigo-500"></div>
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-400/30 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 text-violet-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <div class="text-[12px] text-violet-200/70 leading-relaxed flex-1">
+                <div class="text-white font-medium mb-1">下一步操作</div>
+                将上述 JSON 复制到 <span class="mono text-violet-300 bg-white/5 px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</span> 后重启 Claude Desktop 即可生效。
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
