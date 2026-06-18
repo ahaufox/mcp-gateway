@@ -68,12 +68,13 @@ docker compose build
 echo -e "${YELLOW}[2/4] 同步配置文件到远程服务器...${NC}"
 
 # 安全清理：如果远程存在同名的目录（通常是 Docker 自动创建的），先将其删除，否则挂载会失败
-ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p '${TARGET_DIR}' && rm -rf '${TARGET_DIR}/mcp-proxy/config.json'"
+ssh -S "$SOCKET_PATH" "$REMOTE_TARGET" "mkdir -p '${TARGET_DIR}' && rm -rf '${TARGET_DIR}/mcp-proxy/config.json' '${TARGET_DIR}/mcp-proxy/configs'"
 
 # 使用 --relative 保持目录结构，且仅同步特定文件，避免扫描 .venv 等无关目录
 RSYNC_FILES=(
     "docker-compose.yaml"
     "mcp-proxy/config.json"
+    "mcp-proxy/configs"
     "mcp-proxy/.env"
     "jules-mcp-server/.env"
 )
