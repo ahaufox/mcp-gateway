@@ -51,3 +51,4 @@ images/
 venv/
 mcp-proxy/internal/server/frontend/dist/
 opencode.json
+git-auto-suite-report.json

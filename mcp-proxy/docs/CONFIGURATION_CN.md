@@ -2,6 +2,13 @@
 
 本项目支持 v2 JSON 配置。v1 版本的配置在加载时会自动迁移。
 
+配置可以通过两种方式提供：
+
+- **单文件模式** (`--config <文件>` 或 `<URL>`)：经典 `config.json` 形态，保持向后兼容。
+- **拆分目录模式** (`--config-dir <目录>`)：扫描目录下的所有 `*.json` 文件并在启动时合并。MCP 服务较多时推荐使用，详见 [拆分配置](#拆分配置)。
+
+未显式指定时，程序会自动检测：若 `./configs` 目录存在则使用拆分模式，否则回退到 `./config.json`。
+
 ## 完整示例
 
 ```jsonc
@@ -103,3 +110,103 @@
   ```json
   "authTokens": ["${AUTH_TOKENS}"]
   ```
+
+## 拆分配置
+
+当 MCP 服务数量较多时，单一 `config.json` 越来越难维护。`--config-dir` 模式让你按传输类型（也可以按你习惯的任意维度）把配置拆到多个文件中。
+
+### 目录结构
+
+```
+configs/
+├── base.json                 # 代理服务自身配置 (mcpProxy 块)
+├── categories/
+│   ├── stdio.json            # stdio (子进程) 服务
+│   ├── sse.json              # SSE 服务
+│   ├── streamable-http.json  # streamable-http 服务
+│   └── websocket.json        # websocket 服务 (空占位)
+└── overrides/                # 本地/个人覆盖 (已加入 .gitignore)
+    └── *.json
+```
+
+每个文件都是一份**部分配置** (`PartialConfig`)：所有顶层字段 (`mcpProxy`、`mcpServers`) 均为可选。加载顺序为文件相对路径的字典序：
+
+1. `base.json` 优先加载 (提供 `mcpProxy`)。
+2. 然后是 `categories/*` (提供 `mcpServers`)。
+3. 最后是 `overrides/*`，冲突时后者获胜。
+
+由于 `base` < `categories` < `overrides` 的字典序天然成立，无需额外配置就能得到期望的优先级。允许新增子目录，新子目录会自然落到合并顺序的某一档。
+
+### 单文件形态
+
+`base.json` 通常只设置 `mcpProxy`：
+
+```json
+{
+  "mcpProxy": {
+    "baseURL": "${MCP_BASE_URL}",
+    "addr": ":9090",
+    "name": "MCP Proxy",
+    "version": "1.0.0",
+    "type": "streamable-http",
+    "options": {
+      "panicIfInvalid": false,
+      "logEnabled": true,
+      "authTokens": ["${AUTH_TOKENS}"]
+    }
+  }
+}
+```
+
+`categories/stdio.json` 之类的文件只设置 `mcpServers`：
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" },
+      "options": {
+        "toolFilter": {
+          "mode": "block",
+          "list": ["create_or_update_file", "create_repository"]
+        }
+      }
+    }
+  }
+}
+```
+
+### 覆盖
+
+`configs/overrides/*.json` 已被 `.gitignore` 排除。把 `overrides/local.json` 这样的文件丢进去即可在某个具体部署上覆盖个别服务，而无需把密钥或个人偏好提交到仓库。后加载的覆盖文件获胜；`overrides/` 的字典序在 `categories/` 之后，所以覆盖始终生效。
+
+### 合并规则
+
+- `mcpProxy`：被最后一个设置它的文件整体替换。
+- `mcpServers`：按服务名合并，同名条目后者替换前者。
+- 允许出现 `"mcpServers": {}` 这种空对象，视为空操作。
+- 仅有 `_comment` 等被忽略字段的文件视为空操作。
+- 跳过以 `.` 开头的隐藏文件 (例如 `.DS_Store`) 和非 `.json` 文件。
+- 目录必须至少包含一个 `*.json` 文件，否则加载失败。
+- 必须有文件提供非空的 `mcpProxy` 块，否则报错并提示应在 `base.json` 中设置。
+
+合并完成后，得到的配置会走与单文件模式完全相同的后处理流程：Trae 兼容、逗号分隔 Token 拆分、Options 继承、toolFilter 应用等行为保持一致。
+
+### 在拆分模式下运行
+
+```bash
+# 显式指定目录
+mcp-proxy --config-dir ./configs
+
+# 自动检测 (./configs 存在则用拆分模式，否则用 ./config.json)
+mcp-proxy
+
+# Docker (默认 CMD 即拆分模式)
+docker run -v $(pwd)/mcp-proxy/configs:/config/configs \
+  -v $(pwd)/mcp-proxy/.env:/config/.env \
+  -p 9090:9090 ghcr.io/tbxark/mcp-proxy:latest
+```
+
+`--config-dir` 模式下，前端的 `/api/config` 接口返回内存中的合并视图，能看到生效的最终配置，而不是某一个分片。
