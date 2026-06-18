@@ -1,0 +1,22 @@
+{
+  "name": "mcp-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MCP Gateway - Model Context Protocol aggregation gateway. Root-level tooling for Markdown linting.",
+  "scripts": {
+    "lint:md": "markdownlint \"**/*.md\"",
+    "lint:md:fix": "markdownlint \"**/*.md\" --fix",
+    "lint:md:check": "markdownlint \"**/*.md\" --config .markdownlint.json",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "markdownlint-cli": "^0.45.0"
+  },
+  "lint-staged": {
+    "*.md": [
+      "markdownlint --fix"
+    ]
+  }
+}
