@@ -1,4 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+/**
+ * Converter — 配置格式转换器页面
+ *
+ * 职责：提供 MCP Gateway 的配置格式转换功能。支持用户选择不同的客户端（IDE、终端、平台）和服务器，
+ * 并根据选中的平台（Windows、macOS、Linux）和客户端要求，实时生成兼容的配置文件（如 JSON），支持复制和下载。
+ *
+ * 变更说明：
+ *   - 优化布局，调整左侧控制栏宽度（lg:col-span-5 -> lg:col-span-4），避免服务器选择区域过宽。
+ *   - 扁平化客户端选项卡展示，不再按分类强制分多行，提升紧凑度。
+ *   - 修复平台选择下拉菜单在 mousedown 时被 handleClickOutside 提前关闭导致 onClick 未生效的 Bug。
+ */
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import api from "../utils/api";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -13,31 +24,25 @@ import {
 } from "lucide-react";
 import { detectPlatform, getPlatformLabel, getConfigPathForPlatform, type Platform } from "../utils/platform";
 import {
-  type ClientDef,
   CLIENTS,
   convertToFormat
 } from "../utils/mcpConverter";
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; ring: string; bgDark: string; borderDark: string; textDark: string }> = {
-  emerald:  { bg: "bg-emerald-100 dark:bg-emerald-500/10", border: "border-emerald-300 dark:border-emerald-500/20", text: "text-emerald-700 dark:text-emerald-400", ring: "ring-emerald-400/30", bgDark: "bg-emerald-500/10", borderDark: "border-emerald-500/20", textDark: "text-emerald-400" },
-  violet:   { bg: "bg-violet-100 dark:bg-violet-500/10", border: "border-violet-300 dark:border-violet-500/20", text: "text-violet-700 dark:text-violet-400", ring: "ring-violet-400/30", bgDark: "bg-violet-500/10", borderDark: "border-violet-500/20", textDark: "text-violet-400" },
-  indigo:   { bg: "bg-indigo-100 dark:bg-indigo-500/10", border: "border-indigo-300 dark:border-indigo-500/20", text: "text-indigo-700 dark:text-indigo-400", ring: "ring-indigo-400/30", bgDark: "bg-indigo-500/10", borderDark: "border-indigo-500/20", textDark: "text-indigo-400" },
-  amber:    { bg: "bg-amber-100 dark:bg-amber-500/10", border: "border-amber-300 dark:border-amber-500/20", text: "text-amber-700 dark:text-amber-400", ring: "ring-amber-400/30", bgDark: "bg-amber-500/10", borderDark: "border-amber-500/20", textDark: "text-amber-400" },
-  rose:     { bg: "bg-rose-100 dark:bg-rose-500/10", border: "border-rose-300 dark:border-rose-500/20", text: "text-rose-700 dark:text-rose-400", ring: "ring-rose-400/30", bgDark: "bg-rose-500/10", borderDark: "border-rose-500/20", textDark: "text-rose-400" },
-  cyan:     { bg: "bg-cyan-100 dark:bg-cyan-500/10", border: "border-cyan-300 dark:border-cyan-500/20", text: "text-cyan-700 dark:text-cyan-400", ring: "ring-cyan-400/30", bgDark: "bg-cyan-500/10", borderDark: "border-cyan-500/20", textDark: "text-cyan-400" },
-  orange:   { bg: "bg-orange-100 dark:bg-orange-500/10", border: "border-orange-300 dark:border-orange-500/20", text: "text-orange-700 dark:text-orange-400", ring: "ring-orange-400/30", bgDark: "bg-orange-500/10", borderDark: "border-orange-500/20", textDark: "text-orange-400" },
-  teal:     { bg: "bg-teal-100 dark:bg-teal-500/10", border: "border-teal-300 dark:border-teal-500/20", text: "text-teal-700 dark:text-teal-400", ring: "ring-teal-400/30", bgDark: "bg-teal-500/10", borderDark: "border-teal-500/20", textDark: "text-teal-400" },
-  blue:     { bg: "bg-blue-100 dark:bg-blue-500/10", border: "border-blue-300 dark:border-blue-500/20", text: "text-blue-700 dark:text-blue-400", ring: "ring-blue-400/30", bgDark: "bg-blue-500/10", borderDark: "border-blue-500/20", textDark: "text-blue-400" },
-  green:    { bg: "bg-green-100 dark:bg-green-500/10", border: "border-green-300 dark:border-green-500/20", text: "text-green-700 dark:text-green-400", ring: "ring-green-400/30", bgDark: "bg-green-500/10", borderDark: "border-green-500/20", textDark: "text-green-400" },
-  purple:   { bg: "bg-purple-100 dark:bg-purple-500/10", border: "border-purple-300 dark:border-purple-500/20", text: "text-purple-700 dark:text-purple-400", ring: "ring-purple-400/30", bgDark: "bg-purple-500/10", borderDark: "border-purple-500/20", textDark: "text-purple-400" },
-  slate:    { bg: "bg-slate-100 dark:bg-slate-500/10", border: "border-slate-300 dark:border-slate-500/20", text: "text-slate-700 dark:text-slate-400", ring: "ring-slate-400/30", bgDark: "bg-slate-500/10", borderDark: "border-slate-500/20", textDark: "text-slate-400" },
+  emerald: { bg: "bg-emerald-100 dark:bg-emerald-500/10", border: "border-emerald-300 dark:border-emerald-500/20", text: "text-emerald-700 dark:text-emerald-400", ring: "ring-emerald-400/30", bgDark: "bg-emerald-500/10", borderDark: "border-emerald-500/20", textDark: "text-emerald-400" },
+  violet: { bg: "bg-violet-100 dark:bg-violet-500/10", border: "border-violet-300 dark:border-violet-500/20", text: "text-violet-700 dark:text-violet-400", ring: "ring-violet-400/30", bgDark: "bg-violet-500/10", borderDark: "border-violet-500/20", textDark: "text-violet-400" },
+  indigo: { bg: "bg-indigo-100 dark:bg-indigo-500/10", border: "border-indigo-300 dark:border-indigo-500/20", text: "text-indigo-700 dark:text-indigo-400", ring: "ring-indigo-400/30", bgDark: "bg-indigo-500/10", borderDark: "border-indigo-500/20", textDark: "text-indigo-400" },
+  amber: { bg: "bg-amber-100 dark:bg-amber-500/10", border: "border-amber-300 dark:border-amber-500/20", text: "text-amber-700 dark:text-amber-400", ring: "ring-amber-400/30", bgDark: "bg-amber-500/10", borderDark: "border-amber-500/20", textDark: "text-amber-400" },
+  rose: { bg: "bg-rose-100 dark:bg-rose-500/10", border: "border-rose-300 dark:border-rose-500/20", text: "text-rose-700 dark:text-rose-400", ring: "ring-rose-400/30", bgDark: "bg-rose-500/10", borderDark: "border-rose-500/20", textDark: "text-rose-400" },
+  cyan: { bg: "bg-cyan-100 dark:bg-cyan-500/10", border: "border-cyan-300 dark:border-cyan-500/20", text: "text-cyan-700 dark:text-cyan-400", ring: "ring-cyan-400/30", bgDark: "bg-cyan-500/10", borderDark: "border-cyan-500/20", textDark: "text-cyan-400" },
+  orange: { bg: "bg-orange-100 dark:bg-orange-500/10", border: "border-orange-300 dark:border-orange-500/20", text: "text-orange-700 dark:text-orange-400", ring: "ring-orange-400/30", bgDark: "bg-orange-500/10", borderDark: "border-orange-500/20", textDark: "text-orange-400" },
+  teal: { bg: "bg-teal-100 dark:bg-teal-500/10", border: "border-teal-300 dark:border-teal-500/20", text: "text-teal-700 dark:text-teal-400", ring: "ring-teal-400/30", bgDark: "bg-teal-500/10", borderDark: "border-teal-500/20", textDark: "text-teal-400" },
+  blue: { bg: "bg-blue-100 dark:bg-blue-500/10", border: "border-blue-300 dark:border-blue-500/20", text: "text-blue-700 dark:text-blue-400", ring: "ring-blue-400/30", bgDark: "bg-blue-500/10", borderDark: "border-blue-500/20", textDark: "text-blue-400" },
+  green: { bg: "bg-green-100 dark:bg-green-500/10", border: "border-green-300 dark:border-green-500/20", text: "text-green-700 dark:text-green-400", ring: "ring-green-400/30", bgDark: "bg-green-500/10", borderDark: "border-green-500/20", textDark: "text-green-400" },
+  purple: { bg: "bg-purple-100 dark:bg-purple-500/10", border: "border-purple-300 dark:border-purple-500/20", text: "text-purple-700 dark:text-purple-400", ring: "ring-purple-400/30", bgDark: "bg-purple-500/10", borderDark: "border-purple-500/20", textDark: "text-purple-400" },
+  slate: { bg: "bg-slate-100 dark:bg-slate-500/10", border: "border-slate-300 dark:border-slate-500/20", text: "text-slate-700 dark:text-slate-400", ring: "ring-slate-400/30", bgDark: "bg-slate-500/10", borderDark: "border-slate-500/20", textDark: "text-slate-400" },
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  ide: "IDE / 编辑器",
-  terminal: "终端 / CLI",
-  platform: "AI 平台",
-};
 
 // ─── 组件 ──────────────────────────────────────────────
 
@@ -55,6 +60,7 @@ export const Converter: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>("macos");
   const [showPlatformSelector, setShowPlatformSelector] = useState(false);
+  const platformRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const detected = detectPlatform();
@@ -67,8 +73,8 @@ export const Converter: React.FC = () => {
 
   // 点击外部关闭平台选择器
   useEffect(() => {
-    const handleClickOutside = () => {
-      if (showPlatformSelector) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
         setShowPlatformSelector(false);
       }
     };
@@ -76,7 +82,7 @@ export const Converter: React.FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showPlatformSelector]);
+  }, []);
 
   // ── 加载配置 (在初始化时调用一次) ──
 
@@ -88,7 +94,7 @@ export const Converter: React.FC = () => {
       setAvailableServers(servers);
       setSelectedServers(new Set(servers));
       setError("");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err.response?.status === 401) {
         setError("认证过期，请重新登录");
@@ -108,7 +114,7 @@ export const Converter: React.FC = () => {
 
   const formattedOutput = useMemo(() => {
     if (!proxyConfig) return "";
-    
+
     // 根据选中的客户端配置格式和平台生成正确的输出
     const clientDef = CLIENTS.find(c => c.id === selectedClient)!;
     const formatted = convertToFormat(proxyConfig, {
@@ -117,12 +123,12 @@ export const Converter: React.FC = () => {
       clientConfig: clientDef,
       platform: selectedPlatform
     });
-    
+
     return JSON.stringify(formatted, null, 2);
   }, [proxyConfig, overrideToken, selectedServers, selectedClient, selectedPlatform]);
 
   const selectedClientDef = useMemo(() => CLIENTS.find(c => c.id === selectedClient)!, [selectedClient]);
-  
+
   const currentConfigPath = useMemo(() => {
     return getConfigPathForPlatform(selectedClientDef.configPaths, selectedPlatform);
   }, [selectedClientDef, selectedPlatform]);
@@ -237,12 +243,12 @@ export const Converter: React.FC = () => {
         <div className="mb-3">
           <div className="relative max-w-xs">
             <input
-            type="text"
-            placeholder="搜索客户端..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`input-vp w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none ${theme === "dark" ? "bg-white/5 text-white placeholder-gray-500" : "bg-white text-gray-800 placeholder-gray-400"}`}
-          />
+              type="text"
+              placeholder="搜索客户端..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`input-vp w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none ${theme === "dark" ? "bg-white/5 text-white placeholder-gray-500" : "bg-white text-gray-800 placeholder-gray-400"}`}
+            />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
@@ -254,49 +260,33 @@ export const Converter: React.FC = () => {
           </div>
         </div>
 
-        {/* 客户端选项卡 — 换行显示 */}
+        {/* 客户端选项卡 */}
         <div className="flex flex-wrap gap-2">
-          {Object.entries(
-            filteredClients.reduce((acc, c) => {
-              if (!acc[c.category]) acc[c.category] = [];
-              acc[c.category].push(c);
-              return acc;
-            }, {} as Record<string, ClientDef[]>)
-          ).map(([category, clients]) => (
-            <React.Fragment key={category}>
-              <div className="flex items-center w-full mt-1 first:mt-0">
-                <span className={`text-[11px] font-bold uppercase tracking-widest ${theme === "dark" ? "text-gray-600" : "text-gray-300"}`}>
-                  {CATEGORY_LABELS[category]}
-                </span>
-              </div>
-              {clients.map(client => {
-                const c = COLOR_MAP[client.color];
-                const isActive = selectedClient === client.id;
-                return (
-                  <button
-                    key={client.id}
-                    onClick={() => setSelectedClient(client.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer group ${
-                      isActive
-                        ? `pill-active ${c.bg}`
-                        : `pill ${theme === "dark" ? "bg-white/[0.02]" : "bg-gray-50"}`
-                    }`}
-                    title={`${client.name}: ${client.desc}`}
-                  >
-                    <client.icon className={`w-4 h-4 ${isActive ? c.text : theme === "dark" ? "text-gray-500 group-hover:text-gray-400" : "text-gray-400 group-hover:text-gray-600"} transition-colors`} />
-                    <span className="text-sm font-semibold whitespace-nowrap">{client.name}</span>
-                  </button>
-                );
-              })}
-            </React.Fragment>
-          ))}
+          {filteredClients.map(client => {
+            const c = COLOR_MAP[client.color];
+            const isActive = selectedClient === client.id;
+            return (
+              <button
+                key={client.id}
+                onClick={() => setSelectedClient(client.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl transition-all duration-300 cursor-pointer group ${isActive
+                    ? `pill-active ${c.bg}`
+                    : `pill ${theme === "dark" ? "bg-white/[0.02]" : "bg-gray-50"}`
+                  }`}
+                title={`${client.name}: ${client.desc}`}
+              >
+                <client.icon className={`w-4 h-4 ${isActive ? c.text : theme === "dark" ? "text-gray-500 group-hover:text-gray-400" : "text-gray-400 group-hover:text-gray-600"} transition-colors`} />
+                <span className="text-sm font-semibold whitespace-nowrap">{client.name}</span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       {/* ── 主体两栏 ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* 左侧控制栏 */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-4 space-y-6">
           {/* 服务器选择 */}
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
@@ -316,11 +306,10 @@ export const Converter: React.FC = () => {
                     <button
                       key={server}
                       onClick={() => toggleServer(server)}
-                      className={`pill h-7 px-3 border rounded-lg text-[11px] cursor-pointer ${
-                        selectedServers.has(server)
+                      className={`pill h-7 px-3 border rounded-lg text-[11px] cursor-pointer ${selectedServers.has(server)
                           ? "pill-active"
                           : ""
-                      }`}
+                        }`}
                     >
                       {server}
                     </button>
@@ -357,18 +346,18 @@ export const Converter: React.FC = () => {
         </div>
 
         {/* 右侧输出栏 — 单客户端输出 */}
-        <div className="lg:col-span-7 space-y-3">
+        <div className="lg:col-span-8 space-y-3">
           {/* 元数据栏 */}
           <div className="glass rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-5 text-[11px]">
-              <div className="flex items-center gap-1.5">
-                <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>输出格式</span>
-                <span className={`mono font-medium ${theme === "dark" ? "text-white" : "text-gray-800"}`}>{selectedClientDef.configPaths && selectedClientDef.configPaths[selectedPlatform] ? selectedClientDef.configPaths[selectedPlatform].split("/").pop() : `${selectedClient}.json`}</span>
-              </div>
+              {/* <div className="flex items-center gap-1.5"> */}
+              {/* <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>输出格式</span> */}
+              {/* <span className={`mono font-medium ${theme === "dark" ? "text-white" : "text-gray-800"}`}>{selectedClientDef.configPaths && selectedClientDef.configPaths[selectedPlatform] ? selectedClientDef.configPaths[selectedPlatform].split("/").pop() : `${selectedClient}.json`}</span> */}
+              {/* </div> */}
               <div className="w-px h-4 bg-white/10"></div>
               <div className="flex items-center gap-1.5">
                 <span className={theme === "dark" ? "text-violet-300/50" : "text-violet-500/60"}>平台</span>
-                <div className="relative">
+                <div className="relative" ref={platformRef}>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowPlatformSelector(!showPlatformSelector); }}
                     className={`mono font-medium flex items-center gap-1 cursor-pointer ${theme === "dark" ? "text-white hover:text-violet-300" : "text-gray-800 hover:text-violet-600"}`}
