@@ -1,0 +1,8 @@
+{
+  "name": "agent-config",
+  "tools": {
+    "bash": "ask",
+    "read_file": "allow",
+    "write_file": "ask"
+  }
+}

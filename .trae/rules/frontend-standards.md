@@ -1,0 +1,54 @@
+---
+alwaysApply: true
+---
+
+# React & 前端工程开发规范
+
+> **视觉规范提示**：本文件主要约束前端架构、类型与状态流转。所有的 UI 组件排版、Design Token、颜色/阴影定义以及响应式约束，**必须严格遵循 `.agents/rules/frontend-ui-design-system.md`**。
+
+## 1. 适用范围与技术栈
+- **前端项目 (`web/`)**：Vite + React 19+ + Tailwind CSS v4 + React Router v7 + TypeScript。
+- **TypeScript**：强制使用 `interface` 而非 `type` 声明结构。禁止使用 `enum`（改用 Const Map 或 Literal Types）。
+- **原生优先 (Vanilla First)**：优先使用原生浏览器 API 替代不必要的第三方小工具库。
+
+## 2. 组件 Props 跨调用点审计规范 (Component Props Cross-Call-Site Audit)
+
+### 2.1 强制规范
+- **C1**：向任何共享/复用组件新增或变更 Props 时，**必须**使用 `rg` 或 `grep` 搜索该组件在项目中的所有渲染调用点（`<ComponentName`），逐点确认新 Props 是否需要透传。
+  ```bash
+  # 示例：搜索共享组件的调用点
+  rg -n "<McpConfigModal" web/src/
+  ```text
+- **C2**：审计结果必须覆盖 **所有** 调用点，不得遗漏任何一个。若某调用点故意不传新 Props，必须在代码注释中说明原因。
+- **C3**：同一页面内同一组件多次渲染时，必须逐一检查每个渲染实例。典型场景：
+  - 主页面面板 + 弹窗/抽屉内的同一配置或编辑组件。
+  - 列表项 + 详情面板内的同一卡片或状态组件。
+
+## 3. 变量初始化安全与代码顺序 (Initialization Safety)
+- **强约束**: 严禁在变量（特别是通过 Hook 获取的配置、会话信息、组件状态等）声明之前引用它们。严禁触发 JavaScript 的“暂时性死区”(TDZ) 导致 `ReferenceError`。
+- **组件内部 Hook 排序准则 (必须遵守)**:
+  1. **基础环境 Hooks**: `useNavigate`, `useParams`, `useLocation`。
+  1. **全局/业务 Context & Store**: 诸如 `useAuth`, `useMcpContext` 等。
+  1. **本地组件状态**: `useState`, `useRef`, `useMemo`, `useCallback`。
+  1. **副作用**: `useEffect`。
+- **验证要求**: 在调用任何自定义 Hook 之前，必须确保其构造参数中使用的所有本地变量已在上方完成初始化。
+
+## 4. 用户反馈与 Toast 规范 (Feedback & Toast)
+- **Toast 减法规则 (Toast Reduction)**:
+  - **禁止单一操作弹出多个 Toast**：严禁在“保存并跳转”或“触发并执行”的单一链路中，连续弹出如“保存成功”、“正在触发分析”、“正在跳转”等多个提示。
+  - **合并语义**：直接展示终态或最重要的中间态。若随后有页面跳转，通常只需一个提示，或者利用页面跳转的 Loading 状态本身提供隐式反馈。
+  - **静默跳转**：当操作结果通过页面状态（如进度条、新页面内容）能被用户直观感知时，应**取消成功类 Toast**。
+- **错误反馈**: 严重 API 错误（如 500）使用全局/气泡提示；表单验证、数据缺失等逻辑建议直接在对应输入组件旁显示红字提示，减少弹窗打扰。
+
+## 5. 错误处理规范
+- **禁止使用 `err: any`**: 所有 `catch` 块中的错误参数必须使用 `err: unknown` 而非 `err: any`。
+- **类型断言安全**: 使用类型断言安全地访问错误属性，如 `(err as { response?: { data?: { message?: string } }, message?: string })`。
+- **错误消息提取**: 优先获取 `response.data.message`，其次获取 `message`，并提供默认错误消息。
+
+## 6. 内联编辑与状态模式
+- **复合键编辑标识**: 多字段内联编辑场景下，编辑标识必须使用复合键格式（如 `${id}-fieldName` 字符串），禁止使用单一数字或普通 ID 作为全局编辑状态，确保单字段独立编辑隔离。
+- **编辑隔离**: 每个可编辑字段应拥有独立的编辑状态，避免一个字段的编辑操作影响其他字段。使用 `autoFocus` 和 `onBlur` 管理编辑进出。
+
+## 7. 相关技能 (Related Skills)
+执行本规则前，应加载以下技能：
+- **`code-review`**：全栈代码审查，结合本地静态验证检查 Props 是否漏传。

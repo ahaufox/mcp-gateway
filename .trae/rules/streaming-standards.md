@@ -1,0 +1,84 @@
+---
+alwaysApply: true
+---
+
+# 流式处理前后端统一规范
+
+**角色共鸣**：你是**前后端联调架构师**。涉及流式 SSE 的开发必须严格遵循本规范，禁止内联构造 SSE 格式或绕过统一工具函数。
+
+## 1. 适用范围
+
+本规则适用于仓库内所有后端 SSE 流式端点与前端流式消费代码：
+- 后端：`mcp-proxy`（Go）或 Python 子服务中返回流式响应的端点。
+- 前端：`web/src` 下消费 SSE 流的模块。
+
+## 2. 原则
+
+### 原则 1：统一事件鉴别键
+
+所有 SSE data 行 JSON 的顶层必须使用 `"type"` 键标识事件类型，格式为 `{"type": "<TYPE>", ...}`。
+
+**禁止**使用 `"event"`、`"eventType"` 或其他键名替代。
+
+### 原则 2：统一工具方法
+
+后端所有 SSE 端点必须通过标准工具方法构造响应，**禁止内联手写** SSE 格式字符串或原始流式响应：
+- **Go 端**：使用统一的 SSE 包装器（如 `mcp-proxy` 中的 SSE writer）进行格式化输出。
+- **Python 端**：使用 `format_sse_event(data: dict) -> str` 标准化 SSE 格式。
+
+### 原则 3：统一响应头
+
+所有 SSE 端点必须注入以下响应头：
+
+```text
+X-Accel-Buffering: no
+Cache-Control: no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+Connection: keep-alive
+```text
+
+### 原则 4：前端必须统一解析入口
+
+所有前端流式消费必须通过公共的 SSE 解析工具（如封装好的 `consumeSSEReadableStream()` 或 `connectSSE()`）进行解析。
+
+**禁止**直接操作 `ReadableStream` 或自行按行分割 SSE。
+
+### 原则 5：前端类型必须与后端同步
+
+`web/src/types/stream.ts`（若存在）中的 `SSEEvent.type` 联合类型必须涵盖所有后端实际使用的事件类型。
+
+## 3. 标准事件类型
+
+### 3.1 通用事件
+
+```json
+{"type": "chunk", "data": {"content": "..."}} // 逐字/逐块推流
+{"type": "error", "content": "错误描述"} // 异常事件
+{"type": "init", "data": {...}} // 初始化配置/连接信息
+{"type": "status", "content": "..."} // 状态变更通知
+{"type": "done", "data": {...}} // 传输结束标识
+```text
+
+## 4. 后端实现清单
+
+新增 SSE 端点时，必须遵循：
+1. 采用标准的 SSE 写入逻辑，确保每条消息以 `data: {JSON}\n\n` 格式输出。
+1. 确保刷新缓冲区以避免网关或代理缓存数据导致延迟。
+1. 严格设置 SSE 响应头五件套。
+
+## 5. 前端实现清单
+
+1. 通过统一的 SSE 解析器消费 SSE。
+1. SSE 事件类型从 `event.type` 读取。
+1. 消费完毕后，必须正确释放资源并处理取消（Abort）逻辑。
+
+## 6. 检查清单
+
+审查流式相关代码时，必须检查：
+
+- [ ] 是否使用了标准 SSE 包装器而非拼接原始字符串。
+- [ ] SSE data 行 JSON 顶层键名是否为 `"type"`。
+- [ ] 响应头是否包含完整五件套。
+- [ ] 前端是否通过统一入口消费流。
+- [ ] 前端类型定义是否覆盖所有后端事件类型。

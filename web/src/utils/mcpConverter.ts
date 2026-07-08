@@ -23,12 +23,12 @@ export interface ClientDef {
   keywords: string[];
   configFormat: {
     rootKey: "mcpServers" | "servers";
-    httpField?: "url" | "httpUrl";
+    httpField?: "url" | "httpUrl" | "serverUrl";
     requireType?: boolean;
     useStdioBridge?: boolean;
     platformOverrides?: Partial<Record<Platform, {
       rootKey?: "mcpServers" | "servers";
-      httpField?: "url" | "httpUrl";
+      httpField?: "url" | "httpUrl" | "serverUrl";
       requireType?: boolean;
       useStdioBridge?: boolean;
     }>>;
@@ -162,12 +162,12 @@ export const CLIENTS: ClientDef[] = [
     color: "purple", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%USERPROFILE%\\.gemini\\antigravity\\mcp_config.json",
-      macos: "~/.gemini/antigravity/mcp_config.json",
-      linux: "~/.gemini/antigravity/mcp_config.json"
+      windows: "%USERPROFILE%\\.gemini\\config\\mcp_config.json",
+      macos: "~/.gemini/config/mcp_config.json",
+      linux: "~/.gemini/config/mcp_config.json"
     }, 
     keywords: ["antigravity", "gemini", "google"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: false }
   },
 ];
 

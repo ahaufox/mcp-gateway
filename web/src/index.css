@@ -38,12 +38,20 @@ body {
 
 .light {
   --color-gray-950: #f8fafc;
-  --color-gray-900: #f1f5f9;
-  --color-gray-800: #e2e8f0;
+  --color-gray-900: #111827;
+  --color-gray-800: #1f2937;
   --color-gray-200: #1e293b;
   --color-gray-300: #334155;
   --color-gray-400: #475569;
   --color-gray-500: #64748b;
+}
+
+.light .bg-gray-800 {
+  background-color: #e2e8f0;
+}
+
+.light .bg-gray-900 {
+  background-color: #f1f5f9;
 }
 
 .light .bg-white\/5 {

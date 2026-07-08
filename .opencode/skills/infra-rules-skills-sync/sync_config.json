@@ -1,0 +1,149 @@
+{
+  "rule_globs": {
+    "backend-api-collaboration-rule": [
+      "mcp-proxy/**/*",
+      "web/src/**/*",
+      "docs/**/*"
+    ],
+    "backend-db-migration-standards": [
+      "mcp-proxy/**/*"
+    ],
+    "backend-exception-interception-rule": [
+      "mcp-proxy/**/*",
+      "douyin-mcp/**/*.py",
+      "jules-mcp-server/**/*.py"
+    ],
+    "backend-python-standards": [
+      "douyin-mcp/**/*.py",
+      "jules-mcp-server/**/*.py"
+    ],
+    "backend-startup-memory-safeguard": [
+      "douyin-mcp/**/*.py",
+      "jules-mcp-server/**/*.py"
+    ],
+    "backend-workflow-and-test-safeguards": [
+      "mcp-proxy/**/*",
+      "douyin-mcp/**/*.py",
+      "jules-mcp-server/**/*.py"
+    ],
+    "frontend-header-comment-standards": [
+      "web/src/**/*.ts",
+      "web/src/**/*.tsx"
+    ],
+    "frontend-quote-escape-rule": [
+      "web/src/**/*.tsx"
+    ],
+    "frontend-standards": [
+      "web/**/*.ts",
+      "web/**/*.tsx"
+    ],
+    "frontend-ui-design-system": [
+      "web/**/*.css",
+      "web/src/**/*.tsx"
+    ],
+    "frontend-ui-state-fallback-rule": [
+      "web/src/**/*.tsx"
+    ],
+    "general-ai-response-parsing-rule": [
+      "web/src/**/*.ts",
+      "web/src/**/*.tsx",
+      "mcp-proxy/**/*"
+    ],
+    "general-code-review-standards": [
+      "mcp-proxy/**/*",
+      "web/**/*.ts",
+      "web/**/*.tsx",
+      "douyin-mcp/**/*.py",
+      "jules-mcp-server/**/*.py"
+    ],
+    "general-git-commit-message": [
+      "**/*"
+    ],
+    "general-global-standards": [
+      "**/*"
+    ],
+    "infra-ai-assistant-rules-standards": [
+      ".agents/**/*",
+      ".cursor/**/*",
+      ".claude/**/*",
+      ".lingma/**/*",
+      ".opencode/**/*",
+      ".trae/**/*"
+    ],
+    "infra-ci-formatting-standards": [
+      "web/**/*.ts",
+      "web/**/*.tsx",
+      "mcp-proxy/**/*"
+    ],
+    "infra-dependency-compat-rule": [
+      "web/package.json"
+    ],
+    "streaming-standards": [
+      "mcp-proxy/**/*",
+      "web/src/**/*"
+    ],
+    "system-robustness-and-defensive-programming": [
+      "**/*"
+    ],
+    "task-completion-standards": [
+      "docs/**/*.md"
+    ],
+    "testing-tdd-skills-standards": [
+      "mcp-proxy/**/*",
+      "web/src/**/*.ts",
+      "web/src/**/*.tsx"
+    ],
+    "agent-capability-standards": [
+      ".agents/**/*",
+      ".cursor/**/*",
+      ".claude/**/*",
+      ".lingma/**/*",
+      ".opencode/**/*",
+      ".trae/**/*",
+      "AGENTS.md"
+    ]
+  },
+  "command_skills": [
+    "code-review",
+    "daily-progress-sync",
+    "task-recorder",
+    "infra-rules-skills-sync",
+    "infra-git-auto-suite",
+    "readme-update",
+    "deep-plan"
+  ],
+  "subagent_groups": [
+    {
+      "name": "code-reviewer",
+      "description": "全栈代码审查与安全审计",
+      "skills": [
+        "code-review",
+        "security-guard"
+      ]
+    },
+    {
+      "name": "task-manager",
+      "description": "任务记录、交接、进度追踪与日报",
+      "skills": [
+        "task-recorder",
+        "task-handover",
+        "daily-progress-sync"
+      ]
+    },
+    {
+      "name": "infra-ops",
+      "description": "Git 自动化与部署环境诊断",
+      "skills": [
+        "infra-git-auto-suite"
+      ]
+    },
+    {
+      "name": "agent-config",
+      "description": "Agent 规则审计与多端同步",
+      "skills": [
+        "agent-rules-auditor",
+        "infra-rules-skills-sync"
+      ]
+    }
+  ]
+}
