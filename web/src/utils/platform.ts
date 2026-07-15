@@ -4,6 +4,10 @@ export interface ClientPaths {
   windows: string;
   macos: string;
   linux: string;
+  // unknown 是 Platform 类型中的兜底值（detectPlatform 在浏览器 UA 无法
+  // 识别时返回）。平台配置 JSON 不必提供该键；下标访问在 unknown 上会
+  // 返回 undefined，由调用方决定如何降级（例如显示 "${client}.json"）。
+  unknown?: string;
 }
 
 export interface PlatformConfig {

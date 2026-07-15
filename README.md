@@ -45,7 +45,9 @@
 - **批量调用**：支持顺序/并行批量工具调用
 - **工具重命名**：命名空间、前缀、重命名映射
 - **现代化 UI**：内置 Dashboard，实时监控服务状态
-- **环境变量注入**：配置中 `${VAR}` 格式自动引用环境变量
+- **环境变量注入**：配置中 `${VAR}` 格式自动引用环境变量；支持 Trae 风格的 `${workspaceFolder}` 占位符
+- **Trae 兼容层**：自动识别 Trae 标准超时键 `START_MCP_TIMEOUT_MS` / `RUN_MCP_TIMEOUT_MS`（env / headers 中），并归一化到内部超时配置
+- **多平台配置导出**：`/api/platform-config` 支持一键转换至 Claude Desktop / Claude Code / Cursor / Codex / Antigravity / Gemini / Trae IDE / VS Code 等 8 种客户端格式
 
 ## 快速开始
 
@@ -61,6 +63,8 @@ docker compose build && docker compose up -d
 ./init.sh && ./local_deploy.sh
 ```
 
+> **配置加载顺序**：`mcp-proxy` 默认从容器内 `/config/configs/` 目录加载（合并 `base.json` + `categories/*.json` + `overrides/*.json`）。如需回退到单文件模式，可在 `docker-compose.yaml` 中将启动参数改为 `--config /config/config.json`。
+
 ### 远程部署
 
 ```bash
@@ -72,6 +76,7 @@ chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
 ```
 
 脚本将自动完成：`git pull` → `docker compose build` → `docker compose up -d`。
+`remote_deploy.sh` 会通过 `rsync` 同步 `docker-compose.yaml` 与 `mcp-proxy/configs/`（含子目录）到远程服务器，覆盖旧版 `config.json` 单文件模式。
 
 ## 已集成服务
 
@@ -108,7 +113,14 @@ chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
 │   │   ├── circuitbreaker/ #   熔断器
 │   │   ├── process/        #   进程管理器
 │   │   └── errors/         #   错误码与包装
-│   ├── config.json         #   服务注册配置
+│   ├── configs/            #   服务注册配置（多文件拆分）
+│   │   ├── base.json       #     全局基础配置（地址、认证、超时）
+│   │   ├── categories/     #     按传输类型分类的 mcpServers
+│   │   │   ├── stdio.json
+│   │   │   ├── sse.json
+│   │   │   ├── streamable-http.json
+│   │   │   └── websocket.json
+│   │   └── overrides/      #     自定义覆盖层（优先级最高）
 │   └── Dockerfile          #   多阶段构建
 ├── web/                    # React 前端 Dashboard
 │   └── src/
@@ -142,6 +154,7 @@ chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
 | `NOTION_API_KEY` | 网关 | Notion API 令牌 |
 | `AUTH_TOKENS` | 网关 | 全局 Bearer 认证令牌 |
 | `MCP_BASE_URL` | 网关 | 服务基础地址 |
+| `MCP_WORKSPACE_FOLDER` | 网关 | 工作区路径兜底（用于展开 `${workspaceFolder}` 占位符；为空时使用当前进程工作目录） |
 
 ## API 端点
 
@@ -150,8 +163,8 @@ chmod +x scripts/remote_deploy.sh && ./scripts/remote_deploy.sh
 | `/sse` | SSE 端点（MCP over SSE） |
 | `/messages` | Streamable HTTP 消息端点 |
 | `/api/servers` | 服务列表与状态 |
-| `/api/config` | 当前配置 |
-| `/api/platform-config` | 平台配置转换 |
+| `/api/config` | 当前配置（合并 `configs/` 后视图） |
+| `/api/platform-config` | 平台配置元数据 + 8 种客户端格式的转换接口（Claude Desktop / Claude Code / Cursor / Codex / Antigravity / Gemini / Trae / VS Code） |
 
 ## 🚀 未来规划与社区贡献 (Future & Contributing)
 

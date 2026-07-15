@@ -1,0 +1,19 @@
+{
+  "_comment": "通过 HTTP 流式 (streamable-http) 连接的 MCP 服务，url 必填且 transportType 必填",
+  "mcpServers": {
+    "stitch": {
+      "url": "https://stitch.googleapis.com/mcp",
+      "transportType": "streamable-http",
+      "options": {
+        "disablePing": true
+      },
+      "headers": {
+        "X-Goog-Api-Key": "${STITCH_API_KEY}"
+      }
+    },
+    "langchain-docs": {
+      "transportType": "streamable-http",
+      "url": "https://docs.langchain.com/mcp"
+    }
+  }
+}

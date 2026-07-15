@@ -10,8 +10,16 @@
 # Go build outputs
 go.work
 mcp-proxy/mcp-gateway
+mcp-proxy/mcp-proxy
+mcp-proxy/main
+
 # Dependency directories
 vendor/
+
+# Node.js (root-level markdownlint / husky / lint-staged)
+node_modules/
+package-lock.json
+.husky/_/
 
 # IDE and Editor directories
 .idea/
@@ -32,6 +40,7 @@ Thumbs.db
 # Coverage files
 *.coverprofile
 coverage.out
+.coverage
 
 # Temporary files
 tmp/
@@ -46,8 +55,19 @@ mcp-proxy/.env
 __pycache__
 .trae/documents/*.md
 
+# Test artifacts and downloads
+downloads/
+douyin-mcp/douyin_page.html
+mcp-proxy/test-config.json
+
+# Python test/debug files
+PyMCPAutoGUI/debug_import.py
+PyMCPAutoGUI/pymcpautogui.log
+PyMCPAutoGUI/.coverage
+
 # Redundant docker config copies
 images/
 venv/
 mcp-proxy/internal/server/frontend/dist/
 opencode.json
+git-auto-suite-report.json

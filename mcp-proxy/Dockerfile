@@ -35,7 +35,27 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# 配置 npm 和 uv 使用国内镜像源，以解决远程服务器拉取超时的问题
+ENV UV_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+RUN npm config set registry https://registry.npmmirror.com
+
+# 预全局安装常用的 MCP npm 依赖，以秒级启动 npx
+RUN npm install -g @modelcontextprotocol/server-github \
+                   @antv/mcp-server-chart \
+                   @notionhq/notion-mcp-server \
+                   @playwright/mcp@latest \
+                   @modelcontextprotocol/server-sequential-thinking \
+                   @upstash/context7-mcp \
+                   reactbits-dev-mcp-server
+
+# 预安装 python 相关的 mcp 服务的工具，并将命令路径加入环境变量
+RUN uv tool install mcp-server-fetch
+ENV PATH="/root/.local/bin:${PATH}"
+
 COPY --from=builder /app/build/mcp-proxy /main
 COPY --from=builder /app/docs /docs
+COPY --from=builder /app/platform-config.json /config/platform-config.json
+WORKDIR /config
 ENTRYPOINT ["/main"]
-CMD ["--config", "/config/config.json"]
+# 默认从拆分后的 configs/ 目录加载；可通过 --config 参数回退到单文件模式。
+CMD ["--config-dir", "/config/configs"]

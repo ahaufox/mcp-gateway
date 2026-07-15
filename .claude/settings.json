@@ -1,12 +1,82 @@
 {
   "tools": {
     "bash": {
-      "allow": ["ls", "cat", "echo", "pwd"],
-      "ask": ["rm", "mv", "cp", "mkdir"]
+      "allow": [
+        "ls",
+        "cat",
+        "echo",
+        "pwd"
+      ],
+      "ask": [
+        "rm",
+        "mv",
+        "cp",
+        "mkdir"
+      ]
     },
     "fileSystem": {
       "read": true,
       "write": true
+    }
+  },
+  "mcpServers": {
+    "codegraph": {
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ]
+    },
+    "context7": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/context7/mcp"
+    },
+    "douyin": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/douyin/mcp",
+      "disabled": true
+    },
+    "fetch": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/fetch/mcp"
+    },
+    "jules": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/jules/mcp"
+    },
+    "langchain-docs": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/langchain-docs/mcp"
+    },
+    "playwright": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/playwright/mcp",
+      "disabled": true
+    },
+    "stitch": {
+      "headers": {
+        "Authorization": "DefaultTokens",
+        "Content-Type": "application/json"
+      },
+      "url": "http://mateai.work:9090/stitch/mcp"
     }
   }
 }

@@ -2,18 +2,12 @@ import React from "react";
 import {
   Monitor,
   Puzzle,
-  Cloud,
   Sparkles,
   Bot,
-  Cpu,
   Braces,
-  Layers,
-  Play,
   Terminal,
-  SquareTerminal,
   Globe,
-  Zap,
-  Box
+  Zap
 } from "lucide-react";
 import { type Platform, type ClientPaths } from "./platform";
 
@@ -22,19 +16,19 @@ export interface ClientDef {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
   desc: string;
-  category: "ide" | "terminal" | "assistant" | "platform" | "native";
-  color: "emerald" | "violet" | "indigo" | "amber" | "rose" | "cyan" | "orange" | "teal" | "blue" | "green" | "purple" | "slate";
-  fmtType: "generic" | "proxy";
+  category: "ide" | "terminal" | "platform";
+  color: "emerald" | "violet" | "indigo" | "amber" | "teal" | "blue" | "green" | "purple";
+  fmtType: "generic";
   configPaths: ClientPaths;
   keywords: string[];
   configFormat: {
-    rootKey: "mcpServers" | "servers" | "context_servers";
-    httpField?: "url" | "serverUrl";
+    rootKey: "mcpServers" | "servers";
+    httpField?: "url" | "httpUrl" | "serverUrl";
     requireType?: boolean;
     useStdioBridge?: boolean;
     platformOverrides?: Partial<Record<Platform, {
-      rootKey?: "mcpServers" | "servers" | "context_servers";
-      httpField?: "url" | "serverUrl";
+      rootKey?: "mcpServers" | "servers";
+      httpField?: "url" | "httpUrl" | "serverUrl";
       requireType?: boolean;
       useStdioBridge?: boolean;
     }>>;
@@ -47,7 +41,7 @@ export const CLIENTS: ClientDef[] = [
     id: "claude", 
     name: "Claude Desktop", 
     icon: Monitor, 
-    desc: "Anthropic 官方桌面客户端", 
+    desc: "Anthropic 官方桌面客户端 — 仅支持 stdio 传输", 
     category: "ide", 
     color: "emerald", 
     fmtType: "generic", 
@@ -63,129 +57,49 @@ export const CLIENTS: ClientDef[] = [
     id: "cursor", 
     name: "Cursor", 
     icon: Puzzle, 
-    desc: "AI-first 代码编辑器", 
+    desc: "AI-first 代码编辑器 — 支持全局和项目级配置", 
     category: "ide", 
     color: "indigo", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%APPDATA%\\Cursor\\mcp.json",
-      macos: "~/Library/Application Support/Cursor/mcp.json",
-      linux: "~/.config/Cursor/mcp.json"
+      windows: "%USERPROFILE%\\.cursor\\mcp.json",
+      macos: "~/.cursor/mcp.json",
+      linux: "~/.cursor/mcp.json"
     }, 
     keywords: ["cursor", "ai editor"],
     configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
-    id: "windsurf", 
-    name: "Windsurf", 
-    icon: Cloud, 
-    desc: "Codeium 流式 AI IDE", 
-    category: "ide", 
-    color: "cyan", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\Codeium\\Windsurf\\mcp_config.json",
-      macos: "~/Library/Application Support/Codeium/Windsurf/mcp_config.json",
-      linux: "~/.codeium/windsurf/mcp_config.json"
-    }, 
-    keywords: ["windsurf", "codeium"],
-    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: false }
-  },
-  { 
     id: "trae", 
     name: "Trae IDE", 
     icon: Sparkles, 
-    desc: "字节跳动 AI 开发环境", 
+    desc: "字节跳动 AI 开发环境 — 项目级 .trae/mcp.json", 
     category: "ide", 
     color: "violet", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%APPDATA%\\Trae\\mcp_config.json",
-      macos: "~/Library/Application Support/Trae/mcp_config.json",
-      linux: "~/.trae/mcp_config.json"
+      windows: ".trae\\mcp.json",
+      macos: ".trae/mcp.json",
+      linux: ".trae/mcp.json"
     }, 
     keywords: ["trae", "字节跳动", "bytedance"],
     configFormat: { rootKey: "mcpServers", httpField: "url", requireType: true }
   },
   { 
-    id: "cline", 
-    name: "Cline", 
-    icon: Bot, 
-    desc: "VS Code 全能 AI 助手", 
-    category: "ide", 
-    color: "rose", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\.cline\\mcp_settings.json",
-      macos: "~/.cline/mcp_settings.json",
-      linux: "~/.cline/mcp_settings.json"
-    }, 
-    keywords: ["cline", "vscode extension"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
-  },
-  { 
-    id: "roocode", 
-    name: "Roo Code", 
-    icon: Cpu, 
-    desc: "VS Code 多模型 AI 编程", 
-    category: "ide", 
-    color: "orange", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\.roo-code\\mcp_settings.json",
-      macos: "~/.roo-code/mcp_settings.json",
-      linux: "~/.roo-code/mcp_settings.json"
-    }, 
-    keywords: ["roo", "roo code", "vscode"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
-  },
-  { 
     id: "vscode", 
     name: "VS Code", 
     icon: Braces, 
-    desc: "微软编辑器 MCP 扩展", 
+    desc: "Visual Studio Code — GitHub Copilot Agent 模式，根键为 servers", 
     category: "ide", 
     color: "blue", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%APPDATA%\\Code\\User\\mcp.json",
-      macos: "~/Library/Application Support/Code/User/mcp.json",
-      linux: "~/.config/Code/User/mcp.json"
+      windows: ".vscode\\mcp.json",
+      macos: ".vscode/mcp.json",
+      linux: ".vscode/mcp.json"
     }, 
     keywords: ["vscode", "visual studio", "microsoft"],
     configFormat: { rootKey: "servers", httpField: "url", requireType: false }
-  },
-  { 
-    id: "zed", 
-    name: "Zed Editor", 
-    icon: Layers, 
-    desc: "高性能协作编辑器", 
-    category: "ide", 
-    color: "slate", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\Zed\\settings.json",
-      macos: "~/.zed/settings.json",
-      linux: "~/.config/zed/settings.json"
-    }, 
-    keywords: ["zed", "editor"],
-    configFormat: { rootKey: "context_servers", useStdioBridge: true }
-  },
-  { 
-    id: "continue", 
-    name: "Continue", 
-    icon: Play, 
-    desc: "开源 AI 代码助手", 
-    category: "ide", 
-    color: "purple", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\Continue\\config.json",
-      macos: "~/.continue/config.json",
-      linux: "~/.continue/config.json"
-    }, 
-    keywords: ["continue", "continue.dev"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: true }
   },
 
   // 终端 / CLI
@@ -206,72 +120,54 @@ export const CLIENTS: ClientDef[] = [
     configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
   },
   { 
-    id: "warp", 
-    name: "Warp Terminal", 
-    icon: SquareTerminal, 
-    desc: "Rust 重写智能终端", 
+    id: "claude-code", 
+    name: "Claude Code", 
+    icon: Bot, 
+    desc: "Anthropic Claude Code CLI — 支持全部传输方式", 
+    category: "terminal", 
+    color: "green", 
+    fmtType: "generic", 
+    configPaths: {
+      windows: "%USERPROFILE%\\.claude.json",
+      macos: "~/.claude.json",
+      linux: "~/.claude.json"
+    }, 
+    keywords: ["claude code", "cli", "anthropic"],
+    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+  },
+  { 
+    id: "gemini", 
+    name: "Gemini CLI", 
+    icon: Zap, 
+    desc: "Google Gemini CLI — 终端 AI 助手", 
     category: "terminal", 
     color: "amber", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%APPDATA%\\Warp\\mcp.json",
-      macos: "~/.warp/mcp.json",
-      linux: "~/.config/warp/mcp.json"
+      windows: "%USERPROFILE%\\.gemini\\settings.json",
+      macos: "~/.gemini/settings.json",
+      linux: "~/.gemini/settings.json"
     }, 
-    keywords: ["warp", "terminal", "rust"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+    keywords: ["gemini", "google", "cli"],
+    configFormat: { rootKey: "mcpServers", httpField: "httpUrl", requireType: false }
   },
 
-  // AI 平台 / 助手
+  // AI 平台
   { 
     id: "antigravity", 
     name: "Antigravity", 
     icon: Globe, 
-    desc: "Gemini 生态 AI 扩展", 
+    desc: "Google Antigravity AI IDE — 基于 Gemini 生态", 
     category: "platform", 
-    color: "indigo", 
+    color: "purple", 
     fmtType: "generic", 
     configPaths: {
-      windows: "%APPDATA%\\Gemini\\Antigravity\\mcp_config.json",
-      macos: "~/.gemini/antigravity/mcp_config.json",
-      linux: "~/.config/gemini/antigravity/mcp_config.json"
+      windows: "%USERPROFILE%\\.gemini\\config\\mcp_config.json",
+      macos: "~/.gemini/config/mcp_config.json",
+      linux: "~/.gemini/config/mcp_config.json"
     }, 
     keywords: ["antigravity", "gemini", "google"],
-    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: true }
-  },
-  { 
-    id: "openinterpreter", 
-    name: "Open Interpreter", 
-    icon: Zap, 
-    desc: "自然语言操控计算机", 
-    category: "assistant", 
-    color: "green", 
-    fmtType: "generic", 
-    configPaths: {
-      windows: "%APPDATA%\\Open Interpreter\\mcp.json",
-      macos: "~/.open-interpreter/mcp.json",
-      linux: "~/.open-interpreter/mcp.json"
-    }, 
-    keywords: ["open interpreter", "interpreter"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
-  },
-
-  // mcp-proxy 原生
-  { 
-    id: "proxy", 
-    name: "mcp-proxy", 
-    icon: Box, 
-    desc: "本网关代理原生配置", 
-    category: "native", 
-    color: "amber", 
-    fmtType: "proxy", 
-    configPaths: {
-      windows: "config.json",
-      macos: "config.json",
-      linux: "config.json"
-    }, 
-    keywords: ["mcp-proxy", "proxy", "gateway"],
-    configFormat: { rootKey: "mcpServers", httpField: "url", requireType: false }
+    configFormat: { rootKey: "mcpServers", httpField: "serverUrl", requireType: false }
   },
 ];
 

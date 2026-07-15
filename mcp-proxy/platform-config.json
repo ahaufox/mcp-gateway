@@ -1,32 +1,96 @@
 {
   "platforms": {
-    "claude": {
-      "name": "Claude",
-      "description": "Anthropic Claude MCP 客户端",
+    "claude-desktop": {
+      "name": "Claude Desktop",
+      "description": "Anthropic Claude 桌面客户端 — 仅支持 stdio 传输，远程服务器需通过 mcp-remote 桥接",
       "format": "claude",
       "enabled": true,
-      "serverUrlField": "url"
+      "serverUrlField": "url",
+      "rootKey": "mcpServers",
+      "useStdioBridge": true,
+      "configPaths": {
+        "windows": "%APPDATA%\\Claude\\claude_desktop_config.json",
+        "macos": "~/Library/Application Support/Claude/claude_desktop_config.json",
+        "linux": "~/.config/Claude/claude_desktop_config.json"
+      }
     },
-    "trae": {
-      "name": "Trae/Antigravity",
-      "description": "Trae/Antigravity MCP 客户端",
+    "claude-code": {
+      "name": "Claude Code",
+      "description": "Anthropic Claude Code CLI — 支持 stdio/http/sse/websocket 全部传输方式",
+      "format": "claude",
+      "enabled": true,
+      "serverUrlField": "url",
+      "rootKey": "mcpServers",
+      "configPaths": {
+        "windows": "%USERPROFILE%\\.claude.json",
+        "macos": "~/.claude.json",
+        "linux": "~/.claude.json"
+      }
+    },
+    "cursor": {
+      "name": "Cursor",
+      "description": "Cursor AI 代码编辑器 — 支持全局和项目级 MCP 配置，热加载无需重启",
+      "format": "cursor",
+      "enabled": true,
+      "serverUrlField": "url",
+      "rootKey": "mcpServers",
+      "configPaths": {
+        "windows": "%USERPROFILE%\\.cursor\\mcp.json",
+        "macos": "~/.cursor/mcp.json",
+        "linux": "~/.cursor/mcp.json"
+      }
+    },
+    "codex": {
+      "name": "Codex CLI",
+      "description": "OpenAI Codex CLI — 原生 TOML 配置格式，也支持 JSON mcp.json",
+      "format": "codex",
+      "enabled": true,
+      "serverUrlField": "url",
+      "rootKey": "mcpServers",
+      "configPaths": {
+        "windows": "%USERPROFILE%\\.codex\\mcp.json",
+        "macos": "~/.codex/mcp.json",
+        "linux": "~/.codex/mcp.json"
+      }
+    },
+    "antigravity": {
+      "name": "Antigravity",
+      "description": "Google Antigravity AI IDE — 基于 Gemini 生态，标准 mcpServers JSON 格式",
       "format": "antigravity",
       "enabled": true,
-      "serverUrlField": "url"
+      "serverUrlField": "serverUrl",
+      "rootKey": "mcpServers",
+      "configPaths": {
+        "windows": "%USERPROFILE%\\.gemini\\config\\mcp_config.json",
+        "macos": "~/.gemini/config/mcp_config.json",
+        "linux": "~/.gemini/config/mcp_config.json"
+      }
     },
-    "gemini": {
-      "name": "Gemini",
-      "description": "Google Gemini MCP 客户端",
-      "format": "gemini",
-      "enabled": false,
-      "serverUrlField": "url"
+    "trae": {
+      "name": "Trae IDE",
+      "description": "字节跳动 Trae AI IDE — 项目级 .trae/mcp.json 配置，支持 stdio 和 HTTP",
+      "format": "trae",
+      "enabled": true,
+      "serverUrlField": "url",
+      "rootKey": "mcpServers",
+      "configPaths": {
+        "windows": ".trae\\mcp.json",
+        "macos": ".trae/mcp.json",
+        "linux": ".trae/mcp.json"
+      }
     },
-    "openai": {
-      "name": "OpenAI",
-      "description": "OpenAI MCP 客户端",
-      "format": "openai",
-      "enabled": false,
-      "serverUrlField": "url"
+    "vscode": {
+      "name": "VS Code",
+      "description": "Visual Studio Code — 通过 GitHub Copilot Agent 模式使用 MCP，根键为 servers（非 mcpServers）",
+      "format": "vscode",
+      "enabled": true,
+      "serverUrlField": "url",
+      "rootKey": "servers",
+      "configPaths": {
+        "windows": ".vscode\\mcp.json",
+        "macos": ".vscode/mcp.json",
+        "linux": ".vscode/mcp.json"
+      }
     }
   },
   "servers": {
@@ -34,67 +98,166 @@
       "name": "Stitch",
       "description": "Google Stitch MCP 服务器",
       "category": "ai",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "github": {
       "name": "GitHub",
       "description": "GitHub MCP 服务器",
       "category": "code",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "chart": {
       "name": "Chart",
       "description": "AntV 图表可视化 MCP 服务器",
       "category": "visualization",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "fetch": {
       "name": "Fetch",
       "description": "HTTP Fetch MCP 服务器",
       "category": "utility",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "notion": {
       "name": "Notion",
       "description": "Notion MCP 服务器",
       "category": "productivity",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "playwright": {
       "name": "Playwright",
       "description": "Playwright 浏览器自动化 MCP 服务器",
       "category": "utility",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "sequential-thinking": {
       "name": "Sequential Thinking",
       "description": "结构化思考推理 MCP 服务器",
       "category": "ai",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "context7": {
       "name": "Context7",
       "description": "实时官方文档检索 MCP 服务器",
       "category": "code",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "reactbits": {
       "name": "ReactBits",
       "description": "135+ 动效 React 组件库 MCP 服务器",
       "category": "visualization",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "jules": {
       "name": "Jules",
       "description": "Jules MCP 服务器",
       "category": "ai",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     },
     "douyin": {
       "name": "Douyin",
       "description": "抖音 MCP 服务器",
       "category": "media",
-      "platforms": ["claude", "trae", "gemini", "openai"]
+      "platforms": [
+        "claude-desktop",
+        "claude-code",
+        "cursor",
+        "codex",
+        "antigravity",
+        "gemini",
+        "trae",
+        "vscode"
+      ]
     }
   },
   "categories": {

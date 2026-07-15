@@ -1,0 +1,22 @@
+---
+alwaysApply: false
+description: 依赖兼容性规则，包含引入新的 npm 包及后端依赖锁定的最佳实践。
+globs: web/package.json
+---
+
+# 依赖兼容性规则 (dependency-compat-rule.md)
+
+> **适用范围**：所有前端项目 (`web/`) 和后端项目在引入或升级第三方依赖时，必须遵守本规则。
+
+## 1. 前端 npm 依赖兼容
+- **纯 ESM 包兼容问题**: 在引入纯 ESM 包（`"type": "module"`，如较新版的某些 markdown 解析器、d3 等工具库）时，要注意其与项目打包工具（Vite/TS）的加载兼容性，避免在构建或运行时抛出 `ReferenceError` 或 `Cannot find name`。
+- **依赖冲突排查**:
+  1. 引入新的 npm 包前，先在本地执行构建 (`npm run build`) 验证类型定义和打包产物。
+  1. 若遇到依赖冲突，优先通过配置 `vite.config.ts` 或提升 TypeScript 配置进行兼容解决，不盲目降低依赖版本。
+
+## 2. 后端依赖与类型检查兼容性
+- **类型声明忽略**: 对于缺少类型存根的 Python 第三方库，应在项目的类型检查配置文件中通过忽略配置（如 `ignore_missing_imports = True`）进行配置，严禁在业务代码中滥用 `# type: ignore`。
+- **Go 依赖版本锁定**: Go 项目中引入或升级第三方依赖包后，必须运行 `go mod tidy` 整理依赖树，并提交更新的 `go.mod` 与 `go.sum`。
+
+## 3. 通用原则
+- 升级核心依赖库后，必须立即运行相应的本地测试，确保没有引入破坏性变更 (Breaking Change)。
